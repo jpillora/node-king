@@ -1,0 +1,22 @@
+{
+  "name": "king",
+  "version": "0.1.0",
+  "description": "The King of your Nodes - A powerful command and control center for your server infrastructure",
+  "main": "index.js",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jpillora/node-king"
+  },
+  "keywords": [
+    "server",
+    "management",
+    "king",
+    "command",
+    "control"
+  ],
+  "author": "Jaime Pillora <dev@jpillora.com>",
+  "license": "MIT",
+  "readmeFilename": "README.md"
+}
