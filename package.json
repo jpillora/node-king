@@ -1,9 +1,13 @@
 {
   "name": "king",
   "version": "0.1.0",
-  "description": "The King of your Nodes - A powerful command and control center for your server infrastructure",
-  "main": "index.js",
+  "description": "A powerful server infrastructure management platform - \"The King of your Nodes\"",
+  "main": "out/public.js",
+  "bin": {
+    "king": "./out/cli/king.js"
+  },
   "scripts": {
+    "start": "node node_modules/coffee-script/bin/coffee -bwc -o out/ src/"
   },
   "repository": {
     "type": "git",
@@ -13,10 +17,23 @@
     "server",
     "management",
     "king",
+    "servant",
+    "infrastructure",
+    "platform",
     "command",
     "control"
   ],
   "author": "Jaime Pillora <dev@jpillora.com>",
   "license": "MIT",
-  "readmeFilename": "README.md"
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "commander": "~1.2.0",
+    "levelup": "~0.10.0",
+    "leveldown": "~0.6.1",
+    "dnode": "~1.0.5",
+    "upnode": "~0.4.3"
+  },
+  "devDependencies": {
+    "coffee-script": "~1.6.3"
+  }
 }
