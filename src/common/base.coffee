@@ -6,7 +6,10 @@ module.exports = class Base
   constructor: ->
     @log 'init base' 
 
+  toString: ->
+    @name
+
   log: ->
     args = Array::slice.call arguments
-    args.unshift @name
+    args.unshift @toString() + ':'
     console.log.apply console, args

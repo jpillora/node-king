@@ -1,32 +1,29 @@
 upnode = require "upnode"
 dnode = require "dnode"
 Server = require "../common/server"
+ip = require "../common/ip"
 
 class ServantServer extends Server
 
   name: "ServantServer"
 
-  constructor: (@host) ->
-    
-    if m = @host.match /:(\d+)$/
-      @port = parseInt m[1], 10
-      @host.replace m[0], ''
-    else
-      @port = 5464
+  constructor: (kingHost) ->
 
-    @log "connecting to: #{@host}:#{@port}..."
+    @log "retrieving king interface on #{@host}:#{@port}..."
 
-    upnode.connect @port, @host, (remote, conn) =>
+    @port = 13000
 
-      @log "connected to", Object.keys remote
-      @log "connection:", Object.keys conn
+    @server = upnode (client, conn) ->
 
-      d = upnode
-        bar: (z, done) ->
-          done z + 3
+      @bar = (n, done) -> done n + 42
 
-      conn.pipe(d).pipe(conn)
+    @server.listen @port
 
+    king = ip.host kingHost
+    upnode.connect king.port, king.host, (remote, conn) =>
+      @log "connected to king."
+      #now, become one of king's servants
+      remote.join "#{ip.address()}:#{@port}"
 
 #called via cli
 exports.start = (host) ->

@@ -1,5 +1,6 @@
 upnode = require "upnode"
 Server = require "../common/server"
+ServantClient = require "./servant-client"
 
 class KingServer extends Server
 
@@ -8,17 +9,15 @@ class KingServer extends Server
   constructor: (@port) ->
     @log "listening on: #{@port}..."
 
+    @servants = {}
     $ = @
 
     @server = upnode (client, conn) ->
-      
-      conn.on 'remote', (remote) ->
-        $.log "remote connected", Object.keys remote 
-
-      @foo = (n, done) ->
-        done n + 42
+      @join = (host)   -> new ServantClient host, $
+      @foo = (n, done) -> done n + 42
 
     @server.listen @port
+
 
 
 #called via cli

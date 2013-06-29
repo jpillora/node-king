@@ -15,10 +15,8 @@ program.on '--help', ->
        king rule 5464
        king serve 10.0.1.2
        king serve 10.0.1.2:5464
-
   \  Notes:
        default port is KING (5464)
-
   """
 program.parse process.argv
 
