@@ -1,7 +1,10 @@
 Base = require "../common/base"
 ip = require "../common/ip"
+upnode = require "upnode"
 
-module.exports = class Servant extends Base
+module.exports = class ServantClient extends Base
+
+  name: 'ServantClient'
 
   constructor: (servantHost, @king) ->
 
@@ -10,3 +13,7 @@ module.exports = class Servant extends Base
     @log "retrieving servant interface on #{servant.host}:#{servant.port}..."
 
     upnode.connect servant.port, servant.host, (remote, conn) =>
+
+      @log "servant added"
+
+

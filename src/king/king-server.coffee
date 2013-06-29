@@ -12,11 +12,11 @@ class KingServer extends Server
     @servants = {}
     $ = @
 
-    @server = upnode (client, conn) ->
-      @join = (host)   -> new ServantClient host, $
+    @comms = upnode (client, conn) ->
+      @serve = (host)  -> new ServantClient host, $
       @foo = (n, done) -> done n + 42
 
-    @server.listen @port
+    @comms.listen @port
 
 
 

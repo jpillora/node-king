@@ -2,7 +2,7 @@
 # split hostname and port out of an origin
 exports.host = (host, defaultPort = 5464) ->
   port = null
-  if m = @host.match /:(\d+)$/
+  if m = host.match /:(\d+)$/
     port = parseInt m[1], 10
     host = host.replace m[0], ''
   port = defaultPort unless port
