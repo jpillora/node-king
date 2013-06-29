@@ -1,15 +1,14 @@
-var dnode = require('dnode');
-// var upnode = require('./upnode');
+var upnode = require('upnode');
 
 var id = process.argv[2];
 if(!id) console.log("choose an id") || process.exit(1);
 
-var d = dnode(function(remote, conn) {
-  this.id = id;
-  this.c = function () {
+var d = upnode({
+  id: id,
+  c: function () {
     console.log("client %s hit.", id);
-  };
-});
+  }
+}).connect(5004);
 
 d.on('remote', function (remote) {
   console.log("hitting server...");
@@ -26,4 +25,4 @@ d.on('end', function() {
 });
 
 console.log("connecting...");
-d.connect(5004);
+// d.connect(5004);

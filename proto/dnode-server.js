@@ -1,9 +1,10 @@
-var dnode = require('dnode');
-// var upnode = require('./upnode');
+var upnode = require('upnode');
 
-var d = dnode(function(remote, conn) {
+var d = upnode(function(remote, conn) {
   this.s = function () {
     console.log("server hit, hitting '%s' back...", remote.id);
+
+    console.log(Object.keys(remote));
     remote.c();
   };
 
@@ -12,6 +13,7 @@ var d = dnode(function(remote, conn) {
   });
 });
 
-d.listen(5004);
-console.log("listening...");
+d.listen(5004, function() {
+  console.log("listening...");
+});
 
