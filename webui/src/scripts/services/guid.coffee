@@ -1,0 +1,1 @@
+App.factory 'guid', -> ->  (Math.random()*Math.pow(2,32)).toString(16)

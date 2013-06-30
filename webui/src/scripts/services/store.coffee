@@ -1,9 +1,20 @@
-App.factory 'store', ($rootScope, log) ->
+App.factory 'store', ($rootScope, log, remote) ->
 
-  db = levelup('foo', { db: leveljs })
+  store = levelup 'web-config', db:leveljs
 
-  db.on 'ready', ->
+  store.on 'ready', ->
     log 'store ready'
-    $rootScope.$emit 'ready.store'
+    $rootScope.$emit 'store-ready'
 
-  return db
+  #init store
+  getAll = ->
+
+
+
+  if remote.ready
+    getAll()
+  else
+    $rootScope.$on 'remote-api', getAll
+  
+
+  return store

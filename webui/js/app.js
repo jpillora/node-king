@@ -3,6 +3,12 @@
 
   App = angular.module('king-webui', []);
 
+  App.factory('guid', function() {
+    return function() {
+      return (Math.random() * Math.pow(2, 32)).toString(16);
+    };
+  });
+
   App.factory('log', function() {
     var log;
     log = function() {
@@ -13,42 +19,55 @@
     return log;
   });
 
-  App.factory('remote', function($rootScope, log) {
-    var d, obj, stream;
-    obj = {};
-    stream = shoe("/webs");
-    d = dnode({
+  App.factory('remote', function($rootScope, log, guid) {
+    var clientApi, d, remote;
+    clientApi = {
+      id: guid(),
       print: function(str) {
         return console;
       }
-    });
-    d.on("remote", function(remote) {
-      log("connected to server", remote);
-      remote.hi(7, function(n) {
+    };
+    d = dnode(clientApi);
+    d.on("remote", function(api) {
+      remote.api = api;
+      remote.api.hi(7, function(n) {
         return log("server says: " + n);
       });
-      obj.prototype = remote;
-      return $rootScope.$emit('new.remote');
+      log("got remote api", remote);
+      return $rootScope.$emit('remote-api');
     });
-    d.pipe(stream).pipe(d);
-    return obj;
+    d.pipe(shoe("/webs")).pipe(d);
+    remote = {
+      ready: false,
+      api: null
+    };
+    return remote;
   });
 
-  App.factory('store', function($rootScope, log) {
-    var db;
-    db = levelup('foo', {
+  App.factory('store', function($rootScope, log, remote) {
+    var getAll, store;
+    store = levelup('web-config', {
       db: leveljs
     });
-    db.on('ready', function() {
+    store.on('ready', function() {
       log('store ready');
-      return $rootScope.$emit('ready.store');
+      return $rootScope.$emit('store-ready');
     });
-    return db;
+    getAll = function() {};
+    if (remote.ready) {
+      getAll();
+    } else {
+      $rootScope.$on('remote-api', getAll);
+    }
+    return store;
   });
 
   App.run(function($rootScope, log, remote, store) {
+    log("run webui");
+    window.I = log;
     window.root = $rootScope;
-    return log("run webui");
+    window.store = store;
+    return window.remote = remote;
   });
 
 }).call(this);

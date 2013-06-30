@@ -1,5 +1,7 @@
 
-module.exports = class Base
+# {EventEmitter} = require "events"
+
+module.exports = class Base# extends EventEmitter
 
   name: 'Base'
 

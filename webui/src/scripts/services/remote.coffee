@@ -1,19 +1,28 @@
-App.factory 'remote', ($rootScope, log) ->
+App.factory 'remote', ($rootScope, log, guid) ->
 
-  obj = {}
+  #local api
+  clientApi = 
+    id: guid()
+    print: (str) ->
+      console
 
-  stream = shoe "/webs"
-  d = dnode
-    print: (str) -> console
+  #create dnode
+  d = dnode clientApi
 
-  d.on "remote", (remote) ->
-    log "connected to server", remote
-    remote.hi 7, (n) ->
-      log "server says: #{n}"
+  #remote api
+  d.on "remote", (api) ->
 
-    obj.prototype = remote
-    $rootScope.$emit 'new.remote'
+    remote.api = api
+    remote.api.hi 7, (n) -> log "server says: #{n}"
 
-  d.pipe(stream).pipe d
+    log "got remote api", remote
+    $rootScope.$emit 'remote-api'
 
-  return obj
+  #pipe dnode into the websockets stream
+  d.pipe(shoe "/webs").pipe d
+
+  remote =
+    ready: false
+    api: null
+
+  return remote

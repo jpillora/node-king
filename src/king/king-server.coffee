@@ -3,12 +3,13 @@ http = require "http"
 path = require "path"
 #vendor
 upnode = require "upnode"
-dnode = require "dnode"
 shoe = require "shoe"
 ecstatic = require "ecstatic"
 #local
 Base = require "../common/base"
+List = require "../common/list"
 ServantClient = require "./servant-client"
+WebUser = require "./web-user"
 
 rootdir = path.join __dirname, '..', '..'
 
@@ -18,7 +19,8 @@ class KingServer extends Base
 
   constructor: (@port) ->
     
-    @servants = []
+    @servants = new List
+    @users = new List
 
     @initComms()
     @initWeb()
@@ -26,18 +28,18 @@ class KingServer extends Base
     # @initStatsd()
 
   initComms: ->
-    @comms = upnode((remote, d) =>
+    comms = upnode((remote, d) =>
       #for each new connection
       servant = new ServantClient @, d
 
-      @servants.push servant
+      @servants.add servant
       d.on 'end', =>
         #for each ended connection
-        @servants.splice @servants.indexOf(servant), 1
+        @servants.remove servant
         servant.dismiss()
 
       #return interface
-      servant.getInterface()
+      servant.api
     ).listen @port, =>
       @log "comms listening on: #{@port}"
 
@@ -46,28 +48,22 @@ class KingServer extends Base
       root: path.join rootdir, 'webui'
       cache: 0
 
-    @webs = http.createServer(ecstatic opts).listen 8080, =>
+    webs = http.createServer(ecstatic opts).listen 8080, =>
       @log "webs listening on: 8080"
 
     sock = shoe((stream) =>
-      d = dnode(
-        hi: (n, cb) =>
-          @log "webs hi"
-          cb n + 42
-      )
+      #for each new connection
+      user = new WebUser @, stream
 
-      d.on "remote", (remote) =>
-        @log "web client remote", remote
+      @users.add user
 
-      stream.on "end", => @log "web client end"
-      stream.on "error", => @log "web client error"
-      stream.on "fail", => @log "web client fail"
-      stream.on "close", => @log "web client close"
+      stream.on "end", =>
+        console.log("web client end!")
+        @log "web client end"
+        @users.remove user
 
-      d.pipe(stream).pipe d
-    )
+    ).install webs, "/webs"
 
-    sock.install @webs, "/webs"
 #called via cli
 exports.start = (port = 5464) ->
   new KingServer port
