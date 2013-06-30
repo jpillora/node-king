@@ -1,27 +1,44 @@
 App.factory 'remote', ($rootScope, log, guid) ->
 
   #local api
-  clientApi = 
+  localApi = 
     id: guid()
-    print: (str) ->
-      console
+    log: log
+    #allow server to $rootScope.$broadcast
+    broadcast: ->
+      log 'broadcast', arguments
+      $rootScope.$broadcast.apply $rootScope, arguments
 
-  #create dnode
-  d = dnode clientApi
-
-  #remote api
-  d.on "remote", (api) ->
-
-    remote.api = api
-    remote.api.hi 7, (n) -> log "server says: #{n}"
-
-    log "got remote api", remote
+  newRemote = (remoteApi) ->
+    remote.api = remoteApi
+    log "got remote api", remote.api
     $rootScope.$emit 'remote-api'
 
-  #pipe dnode into the websockets stream
-  d.pipe(shoe "/webs").pipe d
+  #remote connect
+  connect = ->
+    #create dnode
+    d = dnode localApi
 
-  remote =
+    #remote api
+    d.on "remote", newRemote
+
+    #pipe dnode into the websockets stream
+    stream = shoe "/webs"
+
+    d.pipe(stream).pipe d
+
+    stream.on 'end', (msg) =>
+      d.removeListener "remote", newRemote
+      d = null
+      stream = null
+      log "connection lost, reconnecting in 5 seconds..."
+      setTimeout connect, 5000
+
+  #initial connection
+  connect()
+
+  remote = 
+    reconnect: connect
     ready: false
     api: null
 

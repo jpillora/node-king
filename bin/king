@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+
+require("../out/cli/king");
+//needed while we wait for:
+//  https://github.com/jashkenas/coffee-script/issues/2353

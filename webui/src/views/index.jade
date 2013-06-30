@@ -2,12 +2,32 @@
 html
   head
     title King
+    link(rel="stylesheet",href="css/app.css")
+    style [ng-cloak] { display: none; }
+  body(ng-app="king-webui", ng-cloak="ng-cloak")
 
-  body
-    .cage(ng-app="king-webui")
-      p King
+    .header.container.clearfix
+      h2.pull-left King
+
+      button.pull-left(ng-click="$root.panel = 'config'") Config
+      button.pull-left(ng-click="$root.panel = 'servants'")  Servants
+
+    .panels.container
+      .config.panel(ng-controller="ConfigController", ng-show="panel == 'config'")
+        .title.sixteen.columns Config
+
+      .servants.panel(ng-controller="ServantsController", ng-show="panel == 'servants'")
+        .title.sixteen.columns Servants
+
+        .servant.four.columns(ng-repeat="s in servants")
+          div.clearfix
+            h5.id.pull-left(ng-bind="s.id")
+            button.id.pull-right(ng-click="s.visible = !s.visible") Toggle
+          .content(ng-show="s.visible")
+            pre.capabilities(ng-bind="s.capabilities | json")
 
     script(src='//ajax.googleapis.com/ajax/libs/angularjs/1.1.5/angular.js')
     script(src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.js')
+    script(src='//cdnjs.cloudflare.com/ajax/libs/lodash.js/1.3.1/lodash.min.js')
     script(src='js/bundle.js')
     script(src='js/app.js')

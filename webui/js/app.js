@@ -3,6 +3,30 @@
 
   App = angular.module('king-webui', []);
 
+  App.controller('ConfigController', function($scope) {});
+
+  App.controller('ServantsController', function($scope, log) {
+    window.serv = $scope;
+    $scope.servants = [];
+    $scope.$on('servants-init', function(event, servants) {
+      return $scope.servants = servants;
+    });
+    $scope.$on('servants-add', function(event, servant) {
+      return $scope.servants.push(data);
+    });
+    return $scope.$on('servants-remove', function(event, servant) {
+      var i, result;
+      result = _.find($scope.servants, function(s) {
+        return servant.id === s.id;
+      });
+      if (!result) {
+        return;
+      }
+      i = $scope.servants.indexOf(result);
+      return $scope.servants.splice(i, 1);
+    });
+  });
+
   App.factory('guid', function() {
     return function() {
       return (Math.random() * Math.pow(2, 32)).toString(16);
@@ -20,24 +44,38 @@
   });
 
   App.factory('remote', function($rootScope, log, guid) {
-    var clientApi, d, remote;
-    clientApi = {
+    var connect, localApi, newRemote, remote;
+    localApi = {
       id: guid(),
-      print: function(str) {
-        return console;
+      log: log,
+      broadcast: function() {
+        log('broadcast', arguments);
+        return $rootScope.$broadcast.apply($rootScope, arguments);
       }
     };
-    d = dnode(clientApi);
-    d.on("remote", function(api) {
-      remote.api = api;
-      remote.api.hi(7, function(n) {
-        return log("server says: " + n);
-      });
-      log("got remote api", remote);
+    newRemote = function(remoteApi) {
+      remote.api = remoteApi;
+      log("got remote api", remote.api);
       return $rootScope.$emit('remote-api');
-    });
-    d.pipe(shoe("/webs")).pipe(d);
+    };
+    connect = function() {
+      var d, stream,
+        _this = this;
+      d = dnode(localApi);
+      d.on("remote", newRemote);
+      stream = shoe("/webs");
+      d.pipe(stream).pipe(d);
+      return stream.on('end', function(msg) {
+        d.removeListener("remote", newRemote);
+        d = null;
+        stream = null;
+        log("connection lost, reconnecting in 5 seconds...");
+        return setTimeout(connect, 5000);
+      });
+    };
+    connect();
     remote = {
+      reconnect: connect,
       ready: false,
       api: null
     };
@@ -67,7 +105,8 @@
     window.I = log;
     window.root = $rootScope;
     window.store = store;
-    return window.remote = remote;
+    window.remote = remote;
+    return $rootScope.panel = "servants";
   });
 
 }).call(this);

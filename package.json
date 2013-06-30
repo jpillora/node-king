@@ -1,10 +1,10 @@
 {
   "name": "king",
-  "version": "0.1.0",
+  "version": "0.2.3",
   "description": "A powerful server infrastructure management platform - \"The King of your Nodes\"",
   "main": "out/public.js",
   "bin": {
-    "king": "./out/cli/king.js"
+    "king": "./bin/king"
   },
   "scripts": {
     "start": "node node_modules/coffee-script/bin/coffee -bwc -o out/ src/"
@@ -33,7 +33,8 @@
     "dnode": "~1.0.5",
     "upnode": "~0.4.3",
     "ecstatic": "~0.4.5",
-    "shoe": "0.0.11"
+    "shoe": "0.0.11",
+    "async": "~0.2.9"
   },
   "devDependencies": {
     "coffee-script": "~1.6.3",

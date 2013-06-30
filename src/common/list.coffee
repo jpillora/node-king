@@ -5,6 +5,9 @@ module.exports = class List extends EventEmitter
   constructor: ->
     @_array = []
 
+  get: (i) ->
+    @_array[i]
+
   add: (item) ->
     @_array.push item
     @emit 'add', item
@@ -17,6 +20,10 @@ module.exports = class List extends EventEmitter
     @emit 'remote', item
     @
 
+
   each: (fn) ->
     @_array.forEach fn
     @
+
+  map: (fn) ->
+    @_array.map fn

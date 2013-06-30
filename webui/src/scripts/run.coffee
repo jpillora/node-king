@@ -8,4 +8,5 @@ App.run ($rootScope, log, remote, store) ->
   window.store = store
   window.remote = remote
 
+  $rootScope.panel = "servants"
 

@@ -2,13 +2,35 @@
 <html>
   <head>
     <title>King</title>
+    <link rel="stylesheet" href="css/app.css">
+    <style>[ng-cloak] { display: none; }</style>
   </head>
-  <body>
-    <div ng-app="king-webui" class="cage">
-      <p>King</p>
+  <body ng-app="king-webui" ng-cloak="ng-cloak">
+    <div class="header container clearfix">
+      <h2 class="pull-left">King</h2>
+      <button ng-click="$root.panel = 'config'" class="pull-left">Config</button>
+      <button ng-click="$root.panel = 'servants'" class="pull-left"> Servants</button>
+    </div>
+    <div class="panels container">
+      <div ng-controller="ConfigController" ng-show="panel == 'config'" class="config panel">
+        <div class="title sixteen columns">Config</div>
+      </div>
+      <div ng-controller="ServantsController" ng-show="panel == 'servants'" class="servants panel">
+        <div class="title sixteen columns">Servants</div>
+        <div ng-repeat="s in servants" class="servant four columns">
+          <div class="clearfix">
+            <h5 ng-bind="s.id" class="id pull-left"></h5>
+            <button ng-click="s.visible = !s.visible" class="id pull-right">Toggle</button>
+          </div>
+          <div ng-show="s.visible" class="content">
+            <pre ng-bind="s.capabilities | json" class="capabilities"></pre>
+          </div>
+        </div>
+      </div>
     </div>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.1.5/angular.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/1.3.1/lodash.min.js"></script>
     <script src="js/bundle.js"></script>
     <script src="js/app.js"></script>
   </body>

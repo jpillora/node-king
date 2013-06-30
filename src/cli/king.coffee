@@ -1,9 +1,5 @@
-#!/usr/bin/env node
-
 pkg = require("../../package.json")
 program = require("commander")
-# exec = require("child_process").exec
-# fs = require("fs")
 
 #cli init
 program.version pkg.version

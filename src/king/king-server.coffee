@@ -32,14 +32,8 @@ class KingServer extends Base
       #for each new connection
       servant = new ServantClient @, d
 
-      @servants.add servant
-      d.on 'end', =>
-        #for each ended connection
-        @servants.remove servant
-        servant.dismiss()
-
       #return interface
-      servant.api
+      return servant.api
     ).listen @port, =>
       @log "comms listening on: #{@port}"
 
@@ -53,16 +47,20 @@ class KingServer extends Base
 
     sock = shoe((stream) =>
       #for each new connection
-      user = new WebUser @, stream
-
-      @users.add user
-
-      stream.on "end", =>
-        console.log("web client end!")
-        @log "web client end"
-        @users.remove user
+      new WebUser @, stream
 
     ).install webs, "/webs"
+
+    @servants.on 'add', (item)    =>
+      @log 'ADD'
+      @userBroadcast 'servants-add', item.serialize()
+    @servants.on 'remove', (item) =>
+      @log 'REMOVE'
+      @userBroadcast 'servants-remove', item.serialize()
+  
+  userBroadcast: ->
+    @users.each (user) =>
+      user.remote.broadcast.apply user.remote, arguments
 
 #called via cli
 exports.start = (port = 5464) ->

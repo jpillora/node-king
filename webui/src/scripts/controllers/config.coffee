@@ -1,0 +1,1 @@
+App.controller 'ConfigController', ($scope) ->
