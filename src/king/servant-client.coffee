@@ -1,19 +1,26 @@
 Base = require "../common/base"
-ip = require "../common/ip"
+helper = require "../common/helper"
 upnode = require "upnode"
 
 module.exports = class ServantClient extends Base
 
   name: 'ServantClient'
 
-  constructor: (servantHost, @king) ->
+  constructor: (@king, @d) ->
+    @id = "..."
+    @remote = null
 
-    servant = ip.host servantHost
+    @d.on 'remote', (remote) =>
+      @id = remote.id
+      @log "setting remote:", Object.keys remote
+      @remote = remote
 
-    @log "retrieving servant interface on #{servant.host}:#{servant.port}..."
+  getInterface: ->
+    id: @id
+    hi: => @log "hi"
 
-    upnode.connect servant.port, servant.host, (remote, conn) =>
+  dismiss: ->
+    @log "dismissed..."
 
-      @log "servant added"
 
 

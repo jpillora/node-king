@@ -14,7 +14,7 @@ var client = upnode({
 console.log("connecting...");
 
 //create a dnode connection
-var d = client.connect(5004);
+var d = client.connect(5004, 'localhost');
 
 //will fire once the server's remote interface is usable
 d.on('remote', function (remote) {

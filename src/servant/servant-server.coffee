@@ -1,29 +1,38 @@
 upnode = require "upnode"
-Server = require "../common/server"
-ip = require "../common/ip"
+Base = require "../common/base"
+helper = require "../common/helper"
 
-class ServantServer extends Server
+class ServantServer extends Base
 
   name: "ServantServer"
 
   constructor: (kingHost) ->
 
-    @port = 5000 + Math.floor(Math.random()*60*1000)
+    helper.bindAll @
 
     #connect to king comms
-    king = ip.host kingHost
-    @log "retrieving king interface on #{king.host}:#{king.port}..."
-    upnode.connect king.port, king.host, (remote, conn) =>
-      @log "connected to king."
-      #now, become one of king's servants
-      remote.serve "#{ip.address()}:#{@port}"
+    king = helper.host.parse kingHost
+    @id = helper.guid()
 
-    #create comms server
-    @comms = upnode (client, conn) ->
+    @comms = upnode
+      id: @id,
+      hi: => @log "hi"
 
-      @bar = (n, done) -> done n + 42
+    @log "connecting to: #{king.host}:#{king.port}..."
+    @d = @comms.connect king.port, king.host
 
-    @comms.listen @port
+    @d.on 'remote', (r) =>
+      @remote = r
+      @log "got server remote:", Object.keys r
+
+    @d.on 'error', @failure
+    @d.on 'end', @astray
+
+  failure: (e) ->
+    @log "connection error!", e
+
+  astray: ->
+    @log "gone astray!"
 
 #called via cli
 exports.start = (kingHost) ->

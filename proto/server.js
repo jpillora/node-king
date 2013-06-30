@@ -10,7 +10,7 @@ var server = upnode(function(remote, d) {
   };
 
   //d is the dnode connection
-  d.on('remote', function(remote) {
+  d.on('remote', function(remote, a, b) {
     console.log('got client remote:', Object.keys(remote));
   });
 

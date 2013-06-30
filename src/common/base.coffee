@@ -7,9 +7,12 @@ module.exports = class Base
     @log 'init base' 
 
   toString: ->
-    @name
+    if @id then "#{@name} (#{@id})" else @name
 
-  log: ->
-    args = Array::slice.call arguments
+  consargs: (a) ->
+    args = Array::slice.call a
     args.unshift @toString() + ':'
-    console.log.apply console, args
+    args
+
+  log: ->   console.log.apply   console, @consargs arguments
+  error: -> console.error.apply console, @consargs arguments

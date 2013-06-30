@@ -31,9 +31,12 @@
     "levelup": "~0.10.0",
     "leveldown": "~0.6.1",
     "dnode": "~1.0.5",
-    "upnode": "~0.4.3"
+    "upnode": "~0.4.3",
+    "ecstatic": "~0.4.5",
+    "shoe": "0.0.11"
   },
   "devDependencies": {
-    "coffee-script": "~1.6.3"
+    "coffee-script": "~1.6.3",
+    "level-js": "~1.0.6"
   }
 }
