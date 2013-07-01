@@ -8,23 +8,13 @@ html
 
     .header.container.clearfix
       h2.pull-left King
-
-      button.pull-left(ng-click="$root.panel = 'config'") Config
-      button.pull-left(ng-click="$root.panel = 'servants'")  Servants
+      .buttons
+        button.pull-right(ng-click="$root.panel = 'config'") Config
+        button.pull-right(ng-click="$root.panel = 'servants'")  Servants
 
     .panels.container
-      .config.panel(ng-controller="ConfigController", ng-show="panel == 'config'")
-        .title.sixteen.columns Config
-
-      .servants.panel(ng-controller="ServantsController", ng-show="panel == 'servants'")
-        .title.sixteen.columns Servants
-
-        .servant.four.columns(ng-repeat="s in servants")
-          div.clearfix
-            h5.id.pull-left(ng-bind="s.id")
-            button.id.pull-right(ng-click="s.visible = !s.visible") Toggle
-          .content(ng-show="s.visible")
-            pre.capabilities(ng-bind="s.capabilities | json")
+      include panels/config
+      include panels/servants
 
     script(src='//ajax.googleapis.com/ajax/libs/angularjs/1.1.5/angular.js')
     script(src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.js')

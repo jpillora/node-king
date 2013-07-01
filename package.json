@@ -1,6 +1,6 @@
 {
   "name": "king",
-  "version": "0.2.3",
+  "version": "0.3.3",
   "description": "A powerful server infrastructure management platform - \"The King of your Nodes\"",
   "main": "out/public.js",
   "bin": {

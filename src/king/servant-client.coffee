@@ -19,16 +19,22 @@ module.exports = class ServantClient extends Base
     
     @api = @makeApi()
 
-    @d.on 'remote', @newRemote
-    @d.on 'end',    @destroy
+    # helper.tap @d, 'emit', @log
 
-  newRemote: (remote) ->
+    @d.on 'remote', @onRemote
+    @d.on 'end',    @onEnd
+
+  onRemote: (remote) ->
     @id = remote.id
     @log "connected"
     @remote = remote
 
     #add self
     @king.servants.add @
+
+  onEnd: ->
+    @log "dismissed..."
+    @king.servants.remove @
 
   serialize: ->
     id: @id
@@ -41,10 +47,6 @@ module.exports = class ServantClient extends Base
     config:
       get: =>
         @log "get..."
-
-  destroy: ->
-    @log "dismissed..."
-    @king.servants.remove @
 
 
 

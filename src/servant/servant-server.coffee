@@ -18,6 +18,7 @@ class ServantServer extends Base
     @kingAddr = helper.host.parse kingHost
     @id = helper.guid()
     @procs = new List
+    @status = 'idle'
 
     #bind all methods
     helper.bindAll @
@@ -26,6 +27,7 @@ class ServantServer extends Base
     capabilities.calculate @gotCapabilties
 
   gotCapabilties: (@capabilities) ->
+
     #create api
     @api = @makeApi()
 
@@ -35,21 +37,24 @@ class ServantServer extends Base
     #connect to king comms
     @log "connecting to: #{@kingAddr.host}:#{@kingAddr.port}..."
     @d = @comms.connect @kingAddr.port, @kingAddr.host
+    @d.on 'remote', @onRemote
+    @d.on 'error', @onError
 
-    @d.on 'remote', @newRemote
-    @d.on 'error', @failure
-    @d.on 'end', @astray
+    @d.on 'up',        => @setStatus 'up'
+    @d.on 'down',      => @setStatus 'down'
+    @d.on 'reconnect', => @setStatus 'connecting'
 
   #event listeners
-  newRemote: (remote) ->
+  onRemote: (remote) ->
     @log "connected to server"
     @remote = remote
 
-  failure: (e) ->
+  onError: (e) ->
     @log "connection error!", e
 
-  astray: ->
-    @log "gone astray!"
+  setStatus: (s) ->
+    @log "status #{@status} -> #{s}" if s isnt @status
+    @status = s
 
   #exposed api
   makeApi: ->
@@ -72,14 +77,18 @@ class ServantServer extends Base
       @procs.add proc
 
       proc.stdout.on 'data', (buff) =>
-        @log "process (#{proc.pid}): STDOUT: #{buff}"
+        # @log "process (#{proc.pid}): STDOUT: #{buff}"
         callback { type: 'stdout', msg: buff.toString() }
 
       proc.stderr.on 'data', (buff) =>
-        callback { type: 'stdout', msg: buff.toString() }
+        callback { type: 'stderr', msg: buff.toString() }
 
       proc.on 'close', (code) =>
         callback { type: 'close', code }
+        @procs.remove proc
+
+      proc.on 'error', (err) =>
+        callback { type: 'error', err:err.toString() }
         @procs.remove proc
 
       null

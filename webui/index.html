@@ -8,8 +8,10 @@
   <body ng-app="king-webui" ng-cloak="ng-cloak">
     <div class="header container clearfix">
       <h2 class="pull-left">King</h2>
-      <button ng-click="$root.panel = 'config'" class="pull-left">Config</button>
-      <button ng-click="$root.panel = 'servants'" class="pull-left"> Servants</button>
+      <div class="buttons">
+        <button ng-click="$root.panel = 'config'" class="pull-right">Config</button>
+        <button ng-click="$root.panel = 'servants'" class="pull-right"> Servants</button>
+      </div>
     </div>
     <div class="panels container">
       <div ng-controller="ConfigController" ng-show="panel == 'config'" class="config panel">
@@ -17,13 +19,29 @@
       </div>
       <div ng-controller="ServantsController" ng-show="panel == 'servants'" class="servants panel">
         <div class="title sixteen columns">Servants</div>
-        <div ng-repeat="s in servants" class="servant four columns">
-          <div class="clearfix">
-            <h5 ng-bind="s.id" class="id pull-left"></h5>
-            <button ng-click="s.visible = !s.visible" class="id pull-right">Toggle</button>
+        <div ng-controller="ServantController" ng-repeat="servantData in servants" class="servant eight columns">
+          <div ng-init="index = $index" class="clearfix">
+            <h5 class="id pull-left">{{ id }} - ({{ index }})</h5>
+            <button ng-click="visible = !visible" ng-bind="visible &amp;&amp; 'Close' || 'Open'" class="id pull-right"></button>
           </div>
-          <div ng-show="s.visible" class="content">
-            <pre ng-bind="s.capabilities | json" class="capabilities"></pre>
+          <div ng-show="visible" class="content">
+            <div class="exec">
+              <input ng-model="cmd">
+              <button ng-click="exec()">Execute</button>
+            </div>
+            <div ng-show="processes.length &gt; 0" class="processes">
+              <div class="proc-title">Processes</div>
+              <div ng-repeat="proc in processes" class="proc">
+                <div class="proc-name">{{ proc.cmd }}</div>
+                <pre ng-show="proc.stdout" class="proc-out output">{{ proc.stdout }}</pre>
+                <pre ng-show="proc.stderr" class="proc-err output">{{ proc.stderr }}</pre>
+                <pre ng-show="proc.error" class="proc-err output">{{ proc.error }}</pre>
+              </div>
+            </div>
+            <div class="capabilities">
+              <div class="cap-title">Capabilities</div>
+              <div ng-repeat="cap in capabilities" ng-class="cap.version &amp;&amp; 'yes' || 'no'" class="cap four columns"><span>{{ cap.prog }} </span><span ng-show="cap.version">- {{ cap.version }}</span></div>
+            </div>
           </div>
         </div>
       </div>

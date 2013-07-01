@@ -5,6 +5,43 @@
 
   App.controller('ConfigController', function($scope) {});
 
+  App.controller('ServantController', function($scope, log, remote) {
+    var prog, version, _ref;
+    $scope.index = null;
+    $scope.visible = false;
+    $scope.cmd = 'pwd';
+    $scope.id = $scope.servantData.id;
+    $scope.capabilities = [];
+    _ref = $scope.servantData.capabilities;
+    for (prog in _ref) {
+      version = _ref[prog];
+      $scope.capabilities.push({
+        prog: prog,
+        version: version
+      });
+    }
+    $scope.processes = [];
+    $scope.exec = function() {
+      var proc;
+      log('exec!');
+      proc = {
+        cmd: $scope.cmd
+      };
+      remote.api.exec($scope.index, proc.cmd, function(event) {
+        if (/^(std|err)/.test(event.type)) {
+          proc[event.type] = event.msg;
+        } else if (event.type === 'close') {
+          proc.code = event.code;
+        }
+        return $scope.$digest();
+      });
+      return $scope.processes.push(proc);
+    };
+    return $scope.debug = function(s) {
+      return s.ctrl = $scope;
+    };
+  });
+
   App.controller('ServantsController', function($scope, log) {
     window.serv = $scope;
     $scope.servants = [];
@@ -12,7 +49,7 @@
       return $scope.servants = servants;
     });
     $scope.$on('servants-add', function(event, servant) {
-      return $scope.servants.push(data);
+      return $scope.servants.push(servant);
     });
     return $scope.$on('servants-remove', function(event, servant) {
       var i, result;
@@ -50,7 +87,8 @@
       log: log,
       broadcast: function() {
         log('broadcast', arguments);
-        return $rootScope.$broadcast.apply($rootScope, arguments);
+        $rootScope.$broadcast.apply($rootScope, arguments);
+        return $rootScope.$apply();
       }
     };
     newRemote = function(remoteApi) {

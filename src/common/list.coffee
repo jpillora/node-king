@@ -17,7 +17,7 @@ module.exports = class List extends EventEmitter
     i = @_array.indexOf item
     return false if i is -1
     @_array.splice i,1
-    @emit 'remote', item
+    @emit 'remove', item
     @
 
 

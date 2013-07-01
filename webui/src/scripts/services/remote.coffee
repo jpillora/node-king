@@ -8,6 +8,7 @@ App.factory 'remote', ($rootScope, log, guid) ->
     broadcast: ->
       log 'broadcast', arguments
       $rootScope.$broadcast.apply $rootScope, arguments
+      $rootScope.$apply()
 
   newRemote = (remoteApi) ->
     remote.api = remoteApi

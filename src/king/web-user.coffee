@@ -20,21 +20,33 @@ module.exports = class WebUser extends Base
     #connect to user
     @api = @makeApi()
     @d = dnode @api
-    @d.on "remote", @newRemote
+    
+    @d.on "ready", @onReady
+    @d.on "remote", @onRemote
+
     @d.pipe(@stream).pipe @d
 
-    @d.on "end", @destroy
+    #hack: stream emit not landing...
+    helper.tap @stream, 'emit', (e) =>
+      @onClose() if e is 'close'
 
-  newRemote: (remote) =>
+  onReady: ->
+    @log "connected"
 
-    #user has provided server with api
-    @id = remote.id
-    @log "got remote", remote
-    @remote = remote
-
-    @remote.broadcast 'servants-init', @king.servants.map (s) -> s.serialize()
+    @remote.broadcast 'servants-init',
+      @king.servants.map (s) ->
+        s.serialize()
 
     @king.users.add @
+
+  onRemote: (remote) ->
+    #user has provided server with api
+    @id = remote.id
+    @remote = remote
+
+  onClose: ->
+    @log "disconnected"
+    @king.users.remove @
 
   makeApi: ->
     hi: (n, cb) =>
@@ -57,9 +69,6 @@ module.exports = class WebUser extends Base
       set: (k,v,cb) => 
         @log "set #{k} = #{v}"
 
-  destroy: ->
-    @log "web client lost..."
-    @king.users.remove @
 
 
 

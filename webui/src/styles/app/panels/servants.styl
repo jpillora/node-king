@@ -1,0 +1,46 @@
+.servants
+
+  .servant
+    margin 10px
+    padding 10px
+    border-radius 5px
+    background #CCC
+    box-sizing border-box
+
+    .exec
+      text-align: center
+      input
+        height: 25px
+        margin 5px
+        width 60%
+      button
+        margin 5px
+        width 15%
+      pre
+        overflow-y auto
+        max-height 100px
+        &.proc-err
+          color: pink
+
+    .processes
+      .proc
+        margin 5px
+        padding 5px
+        color: white
+        font-family Courier
+        border-radius 5px
+        background #333
+        .proc-name
+          font-weight bold
+
+    .capabilities
+      box-sizing border-box
+      .cap
+        margin: 3px
+        padding: 3px
+        border-radius 3px
+        &.yes
+          background: lighten(green, 50%)
+        &.no
+          background: lighten(red, 50%)
+

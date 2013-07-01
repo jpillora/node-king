@@ -52,15 +52,15 @@ class KingServer extends Base
     ).install webs, "/webs"
 
     @servants.on 'add', (item)    =>
-      @log 'ADD'
       @userBroadcast 'servants-add', item.serialize()
+
     @servants.on 'remove', (item) =>
-      @log 'REMOVE'
       @userBroadcast 'servants-remove', item.serialize()
   
   userBroadcast: ->
+    args = arguments
     @users.each (user) =>
-      user.remote.broadcast.apply user.remote, arguments
+      user.remote.broadcast.apply user.remote, args
 
 #called via cli
 exports.start = (port = 5464) ->

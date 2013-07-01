@@ -11,6 +11,7 @@ versionCmds = [
   {name: "git"}
   {name: "npm"}
   {name: "mongod"}
+  {name: "redis"}
 ]
 
 exports.calculate = (callback) ->

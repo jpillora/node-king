@@ -3,11 +3,8 @@ exports.guid = -> (Math.random()*Math.pow(2,32)).toString(16)
 
 exports.bindAll = (obj, to = obj) ->
   for key, val of obj
-    if obj.hasOwnProperty key
-      if typeof val is 'function'
-        obj[key] = val.bind to
-      # else if typeof val is 'object'
-      #   obj[key] = exports.bind val, to
+    if typeof val is 'function'
+      obj[key] = val.bind to
   return obj
 
 exports.host = 
@@ -25,5 +22,11 @@ exports.host =
   address: ->
     'localhost'
 
-
-function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+exports.tap = (obj, fnName, fn) ->
+  unless typeof obj[fnName] is 'function'
+    console.log "object has no '#{fnName}' function"
+    return
+  orig = obj[fnName]
+  obj[fnName] = ->
+    fn.apply obj, arguments
+    orig.apply obj, arguments

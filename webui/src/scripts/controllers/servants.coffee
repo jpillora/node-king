@@ -8,7 +8,7 @@ App.controller 'ServantsController', ($scope, log) ->
     $scope.servants = servants
 
   $scope.$on 'servants-add', (event, servant) ->
-    $scope.servants.push data
+    $scope.servants.push servant
 
   $scope.$on 'servants-remove', (event, servant) ->
     result = _.find $scope.servants, (s) ->

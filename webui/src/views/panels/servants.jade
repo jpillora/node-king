@@ -1,0 +1,33 @@
+
+.servants.panel(ng-controller="ServantsController",
+                ng-show="panel == 'servants'")
+  .title.sixteen.columns Servants
+
+  .servant.eight.columns(ng-controller="ServantController",
+                         ng-repeat="servantData in servants")
+
+    div.clearfix(ng-init="index = $index")
+      h5.id.pull-left {{ id }} - ({{ index }})
+      button.id.pull-right(ng-click="visible = !visible",
+                           ng-bind="visible && 'Close' || 'Open'")
+    .content(ng-show="visible")
+
+      .exec
+        input(ng-model="cmd")
+        button(ng-click="exec()") Execute
+
+      .processes(ng-show="processes.length > 0")
+        .proc-title Processes
+        
+        .proc(ng-repeat="proc in processes")
+          .proc-name {{ proc.cmd }}
+          pre.proc-out.output(ng-show="proc.stdout") {{ proc.stdout }}
+          pre.proc-err.output(ng-show="proc.stderr") {{ proc.stderr }}
+          pre.proc-err.output(ng-show="proc.error") {{ proc.error }}
+
+      .capabilities
+        .cap-title Capabilities
+        .cap.four.columns(ng-repeat="cap in capabilities", ng-class="cap.version && 'yes' || 'no'")
+          span {{ cap.prog }} 
+          span(ng-show='cap.version') - {{ cap.version }}
+          
