@@ -54,13 +54,10 @@ module.exports = class WebUser extends Base
       cb n + 42
 
     exec: (index, cmd, callback) =>
-
       servant = @king.servants.get index
       unless servant
         return callback {type: 'error', msg: "missing servant: #{index}"}
-
       @log "executing: '#{cmd}'"
-
       servant.remote.exec cmd, callback
 
     config:
@@ -69,6 +66,12 @@ module.exports = class WebUser extends Base
       set: (k,v,cb) => 
         @log "set #{k} = #{v}"
 
-
+    git: (cb) =>
+      args = Array::slice.call arguments
+      method = args.shift()
+      fn = @king.repos?[method]
+      return unless fn
+      @log "git: repo.#{method}(#{args})"
+      fn.apply(@king.repos, args)
 
 

@@ -41,9 +41,10 @@ module.exports = class ServantClient extends Base
     capabilities: @remote?.capabilities
 
   makeApi: ->
+
     report: =>
       @log "data reported", Array::slice.call arguments
-    
+
     config:
       get: =>
         @log "get..."
