@@ -5,6 +5,8 @@
 
   App.controller('ConfigController', function($scope) {});
 
+  App.controller('ProcessController', function($scope) {});
+
   App.controller('ServantController', function($scope, log, remote) {
     var prog, version, _ref;
     $scope.index = null;
@@ -27,7 +29,7 @@
       proc = {
         cmd: $scope.cmd
       };
-      remote.api.exec($scope.index, proc.cmd, function(event) {
+      remote.api.servant($scope.index, "remote.exec", proc.cmd, function(event) {
         if (/^(std|err)/.test(event.type)) {
           proc[event.type] = event.msg;
         } else if (event.type === 'close') {
@@ -43,8 +45,11 @@
   });
 
   App.controller('ServantsController', function($scope, log) {
+    var get;
     window.serv = $scope;
     $scope.servants = [];
+    get = function(id) {};
+    $scope.$on('servant-process-stdout', function(event, id, pid, output) {});
     $scope.$on('servants-init', function(event, servants) {
       return $scope.servants = servants;
     });
@@ -86,7 +91,9 @@
       id: guid(),
       log: log,
       broadcast: function() {
-        log('broadcast', arguments);
+        var args;
+        args = Array.prototype.slice.call(arguments);
+        log("broadcast: '" + args[0] + "'", args.slice(1));
         $rootScope.$broadcast.apply($rootScope, arguments);
         return $rootScope.$apply();
       }

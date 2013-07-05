@@ -6,7 +6,8 @@ App.factory 'remote', ($rootScope, log, guid) ->
     log: log
     #allow server to $rootScope.$broadcast
     broadcast: ->
-      log 'broadcast', arguments
+      args = Array::slice.call arguments
+      log "broadcast: '#{args[0]}'", args.slice(1)
       $rootScope.$broadcast.apply $rootScope, arguments
       $rootScope.$apply()
 

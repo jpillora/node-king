@@ -1,5 +1,4 @@
-#core
-{spawn,fork} = require "child_process"
+
 #vendor
 upnode = require "upnode"
 #local
@@ -7,6 +6,7 @@ Base = require "../common/base"
 List = require "../common/list"
 helper = require "../common/helper"
 capabilities = require "./capabilities"
+ServantProcess = require "./process"
 
 class ServantServer extends Base
 
@@ -56,42 +56,23 @@ class ServantServer extends Base
     @log "status #{@status} -> #{s}" if s isnt @status
     @status = s
 
+  broadcast: ->
+    args = Array::slice.call arguments
+    args[0] = "servant-#{args[0]}"
+    args.splice 1, 0, @id
+    @remote.broadcast.apply @, args
+
   #exposed api
   makeApi: ->
 
     id: @id
     capabilities: @capabilities
 
-    exec: (cmd, callback) =>
-
-      @log "executing: '#{cmd}'"
-
-      args = cmd.split /\s+/
-      program = args.shift()
-
-      proc = if program is 'node'
-        fork args
-      else
-        spawn program, args
-
-      @procs.add proc
-
-      proc.stdout.on 'data', (buff) =>
-        # @log "process (#{proc.pid}): STDOUT: #{buff}"
-        callback { type: 'stdout', msg: buff.toString() }
-
-      proc.stderr.on 'data', (buff) =>
-        callback { type: 'stderr', msg: buff.toString() }
-
-      proc.on 'close', (code) =>
-        callback { type: 'close', code }
-        @procs.remove proc
-
-      proc.on 'error', (err) =>
-        callback { type: 'error', err:err.toString() }
-        @procs.remove proc
-
-      null
+    exec: (cmd) =>
+      try
+        new ServantProcess @, cmd
+      catch e
+        @log "Process Exception: #{e}"
 
 #called via cli
 exports.start = (kingHost) ->

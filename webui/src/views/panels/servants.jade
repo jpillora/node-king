@@ -16,15 +16,8 @@
         input(ng-model="cmd")
         button(ng-click="exec()") Execute
 
-      .processes(ng-show="processes.length > 0")
-        .proc-title Processes
-        
-        .proc(ng-repeat="proc in processes")
-          .proc-name {{ proc.cmd }}
-          pre.proc-out.output(ng-show="proc.stdout") {{ proc.stdout }}
-          pre.proc-err.output(ng-show="proc.stderr") {{ proc.stderr }}
-          pre.proc-err.output(ng-show="proc.error") {{ proc.error }}
-
+      include servants/processes
+      
       .capabilities
         .cap-title Capabilities
         .cap.four.columns(ng-repeat="cap in capabilities", ng-class="cap.version && 'yes' || 'no'")

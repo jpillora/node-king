@@ -7,6 +7,9 @@ exports.bindAll = (obj, to = obj) ->
       obj[key] = val.bind to
   return obj
 
+exports.type = (obj) ->
+  return /\[object (\w+)\]/.test(Object::toString.call(obj)) and RegExp.$1.toLowerCase()
+
 exports.host = 
   # split hostname and port out of an origin
   parse: (host, defaultPort = 5464) ->

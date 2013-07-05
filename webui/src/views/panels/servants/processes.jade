@@ -1,0 +1,9 @@
+.processes(ng-show="processes.length > 0")
+  .proc-title Processes
+  
+  .proc(ng-repeat="proc in processes",
+        ng-controller="ProcessController")
+    .proc-name {{ proc.cmd }}
+    pre.proc-out.output(ng-show="proc.stdout") {{ proc.stdout }}
+    pre.proc-err.output(ng-show="proc.stderr") {{ proc.stderr }}
+    pre.proc-err.output(ng-show="proc.error") {{ proc.error }}

@@ -4,6 +4,13 @@ App.controller 'ServantsController', ($scope, log) ->
 
   $scope.servants = []
 
+  get = (id) ->
+    
+
+  $scope.$on 'servant-process-stdout', (event, id, pid, output) ->
+    
+
+
   $scope.$on 'servants-init', (event, servants) ->
     $scope.servants = servants
 

@@ -20,7 +20,6 @@ module.exports = class List extends EventEmitter
     @emit 'remove', item
     @
 
-
   each: (fn) ->
     @_array.forEach fn
     @

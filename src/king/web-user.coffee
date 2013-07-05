@@ -33,45 +33,33 @@ module.exports = class WebUser extends Base
   onReady: ->
     @log "connected"
 
-    @remote.broadcast 'servants-init',
-      @king.servants.map (s) ->
-        s.serialize()
-
+    servants = @king.servants.map (s) -> s.serialize()
+    @remote.broadcast 'servants-init', servants
+      
     @king.users.add @
 
   onRemote: (remote) ->
     #user has provided server with api
-    @id = remote.id
     @remote = remote
+    @id = remote.id
 
   onClose: ->
     @log "disconnected"
     @king.users.remove @
 
   makeApi: ->
-    hi: (n, cb) =>
-      @log "hi!"
-      cb n + 42
 
-    exec: (index, cmd, callback) =>
-      servant = @king.servants.get index
-      unless servant
-        return callback {type: 'error', msg: "missing servant: #{index}"}
-      @log "executing: '#{cmd}'"
-      servant.remote.exec cmd, callback
-
-    config:
-      get: (k,cb)   =>
-        @log "get #{k}"
-      set: (k,v,cb) => 
-        @log "set #{k} = #{v}"
-
-    git: (cb) =>
+    servant: =>
       args = Array::slice.call arguments
-      method = args.shift()
-      fn = @king.repos?[method]
-      return unless fn
-      @log "git: repo.#{method}(#{args})"
-      fn.apply(@king.repos, args)
+      callback = args[args.length - 1]
+      callback = @log if typeof callback isnt 'function'
+      id = args.shift()
+      servant = @king.servants.get id
+      unless servant
+        return callback "missing servant: '#{id}'"
+      servant.proxy args
+
+    king: => @king.proxy arguments
+
 
 

@@ -31,7 +31,7 @@
             </div>
             <div ng-show="processes.length &gt; 0" class="processes">
               <div class="proc-title">Processes</div>
-              <div ng-repeat="proc in processes" class="proc">
+              <div ng-repeat="proc in processes" ng-controller="ProcessController" class="proc">
                 <div class="proc-name">{{ proc.cmd }}</div>
                 <pre ng-show="proc.stdout" class="proc-out output">{{ proc.stdout }}</pre>
                 <pre ng-show="proc.stderr" class="proc-err output">{{ proc.stderr }}</pre>

@@ -7,47 +7,43 @@ upnode = require "upnode"
 shoe = require "shoe"
 ecstatic = require "ecstatic"
 #local
+dbs = require "../common/dbs"
 Base = require "../common/base"
+helper = require "../common/helper"
 dirs = require "../common/dirs"
 List = require "../common/list"
 ServantClient = require "./servant-client"
 WebUser = require "./web-user"
-#vars
-kingPort = 5464
-webPort = 5474
-gitPort = 5484
 
 class KingServer extends Base
 
   name: "KingServer"
 
-  constructor: (@port) ->
+  constructor: (@webPort = 5480) ->
 
+    helper.bindAll @
     @servants = new List
     @users = new List
 
-    @initStatsd()
-    @initGit()
-    @initComms()
-    @initWeb()
+    @log "init dbs..."
+    dbs.init @gotDBs
 
-  initComms: ->
-    comms = upnode((remote, d) =>
-      #for each new connection
-      servant = new ServantClient @, d
+  gotDBs: (err, @config, @status) ->
+    return "config error: #{err}" if err
 
-      #return interface
-      return servant.api
-    ).listen @port, =>
-      @log "comms listening on: #{@port}"
+    @startWeb(@webPort)
+    @startStatsd()
+    @startGit()
+    @startComms()
 
-  initWeb: ->
+  startWeb: (port) ->
     opts =
       root: path.join dirs.root, 'webui'
       cache: 0
 
-    webs = http.createServer(ecstatic opts).listen webPort, =>
-      @log "webs listening on: #{webPort}"
+    webs = http.createServer(ecstatic opts).listen port, =>
+      @log "webs listening on: #{port}"
+      @config.put 'port.web', port
 
     sock = shoe((stream) =>
       #for each new connection
@@ -56,43 +52,70 @@ class KingServer extends Base
     ).install webs, "/webs"
 
     @servants.on 'add', (item)    =>
-      @userBroadcast 'servants-add', item.serialize()
+      @broadcast 'servants-add', item.serialize()
 
     @servants.on 'remove', (item) =>
-      @userBroadcast 'servants-remove', item.serialize()
-  
-  userBroadcast: ->
+      @broadcast 'servants-remove', item.serialize()
+
+  stopComms: ->
+    @comms.close() if @comms
+    @status.put 'comms.running', false
+
+  startComms: ->
+    #kill old comms if exists
+    @config.get 'port.comms', (err, port) =>
+      return @log "no comms port set" if err
+
+      @comms = upnode((remote, d) =>
+        #for each new connection
+        servant = new ServantClient @, d
+
+        #return interface
+        return servant.api
+      ).listen port, =>
+        @log "comms listening on: #{port}"
+        @status.put 'comms.running', true
+
+  broadcast: ->
     args = arguments
     @users.each (user) =>
       user.remote.broadcast.apply null, args
 
-  initGit: ->
-    @repos = pushover path.join dirs.king, 'repos'
+  stopGit: ->
+    @git.close() if @git
+    @status.put 'git.running', false
 
-    server = http.createServer((req, res) =>
-      @repos.handle req, res
-    ).listen gitPort, =>
-      @log "git listening on: #{gitPort}"
+  startGit: ->
+    @stopGit()
+    @config.get 'port.git', (err, port) =>
+      return @log "no git port set" if err
 
-    @repos.on 'push', (push) =>
-      @log('GIT: push')
-      push.accept()
-  
-    @repos.on 'fetch', (fetch) =>
-      @log('GIT: fetch')
-      fetch.accept()
+      @repos = pushover path.join dirs.king, 'repos'
 
-    @repos.on 'tag', (tag) =>
-      @log('GIT: tag')
-      tag.accept()
+      @git = http.createServer((req, res) =>
+        @repos.handle req, res
+      ).listen port, =>
+        @log "git listening on: #{port}"
+        @status.put 'git.running', true
 
-    @repos.list (err, rs) =>
-      @log "GIT: list: ", rs
+      @repos.on 'push', (push) =>
+        @log('GIT: push')
+        push.accept()
+    
+      @repos.on 'fetch', (fetch) =>
+        @log('GIT: fetch')
+        fetch.accept()
 
-  initStatsd: ->
+      @repos.on 'tag', (tag) =>
+        @log('GIT: tag')
+        tag.accept()
+
+    # @repos.list (err, rs) =>
+    #   @log "GIT: list: ", rs
+
+  startStatsd: ->
     @log('init statsd')
 
 
 #called via cli
-exports.start = (port = 5464) ->
-  new KingServer port
+exports.start = (port) -> new KingServer port
