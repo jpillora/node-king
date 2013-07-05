@@ -1,4 +1,5 @@
 Base = require "../common/base"
+proxy = require "../common/proxy"
 helper = require "../common/helper"
 dnode = require "dnode"
 
@@ -18,8 +19,7 @@ module.exports = class WebUser extends Base
     helper.bindAll @
 
     #connect to user
-    @api = @makeApi()
-    @d = dnode @api
+    @d = dnode {proxy:proxy @}
     
     @d.on "ready", @onReady
     @d.on "remote", @onRemote
@@ -30,36 +30,20 @@ module.exports = class WebUser extends Base
     helper.tap @stream, 'emit', (e) =>
       @onClose() if e is 'close'
 
-  onReady: ->
-    @log "connected"
-
-    servants = @king.servants.map (s) -> s.serialize()
-    @remote.broadcast 'servants-init', servants
-      
-    @king.users.add @
-
   onRemote: (remote) ->
     #user has provided server with api
     @remote = remote
     @id = remote.id
 
+  onReady: ->
+    @log "connected"
+    @king.users.add @
+
+    @remote.proxy 'servants.add', @king.servants.serialize()
+  
   onClose: ->
     @log "disconnected"
     @king.users.remove @
-
-  makeApi: ->
-
-    servant: =>
-      args = Array::slice.call arguments
-      callback = args[args.length - 1]
-      callback = @log if typeof callback isnt 'function'
-      id = args.shift()
-      servant = @king.servants.get id
-      unless servant
-        return callback "missing servant: '#{id}'"
-      servant.proxy args
-
-    king: => @king.proxy arguments
 
 
 

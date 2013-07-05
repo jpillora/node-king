@@ -1,6 +1,6 @@
 App.factory 'store', ($rootScope, log, remote) ->
 
-  store = levelup 'web-config', db:leveljs
+  store = Node.levelup 'web-config', db: Node.leveljs
 
   store.on 'ready', ->
     log 'store ready'
@@ -8,7 +8,6 @@ App.factory 'store', ($rootScope, log, remote) ->
 
   #init store
   getAll = ->
-
 
 
   if remote.ready

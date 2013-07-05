@@ -5,8 +5,9 @@ upnode = require "upnode"
 Base = require "../common/base"
 List = require "../common/list"
 helper = require "../common/helper"
+proxy = require "../common/proxy"
 capabilities = require "./capabilities"
-ServantProcess = require "./process"
+ServantProcess = require "./servant-process"
 
 class ServantServer extends Base
 
@@ -28,11 +29,11 @@ class ServantServer extends Base
 
   gotCapabilties: (@capabilities) ->
 
-    #create api
-    @api = @makeApi()
-
-    #create upnode client
-    @comms = upnode @api
+    #create upnode client with api
+    @comms = upnode
+      id: @id
+      capabilities: @capabilities
+      proxy: proxy @
 
     #connect to king comms
     @log "connecting to: #{@kingAddr.host}:#{@kingAddr.port}..."
@@ -56,23 +57,11 @@ class ServantServer extends Base
     @log "status #{@status} -> #{s}" if s isnt @status
     @status = s
 
-  broadcast: ->
-    args = Array::slice.call arguments
-    args[0] = "servant-#{args[0]}"
-    args.splice 1, 0, @id
-    @remote.broadcast.apply @, args
-
-  #exposed api
-  makeApi: ->
-
-    id: @id
-    capabilities: @capabilities
-
-    exec: (cmd) =>
-      try
-        new ServantProcess @, cmd
-      catch e
-        @log "Process Exception: #{e}"
+  exec: (cmd) =>
+    try
+      new ServantProcess @, cmd
+    catch e
+      @log "Process Exception: #{e}"
 
 #called via cli
 exports.start = (kingHost) ->

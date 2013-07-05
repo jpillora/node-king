@@ -1,40 +1,33 @@
-App.factory 'remote', ($rootScope, log, guid) ->
-
-  #local api
-  localApi = 
-    id: guid()
-    log: log
-    #allow server to $rootScope.$broadcast
-    broadcast: ->
-      args = Array::slice.call arguments
-      log "broadcast: '#{args[0]}'", args.slice(1)
-      $rootScope.$broadcast.apply $rootScope, arguments
-      $rootScope.$apply()
-
-  newRemote = (remoteApi) ->
-    remote.api = remoteApi
-    log "got remote api", remote.api
-    $rootScope.$emit 'remote-api'
+App.factory 'remote', ($rootScope, log) ->
 
   #remote connect
   connect = ->
-    #create dnode
-    d = dnode localApi
 
-    #remote api
-    d.on "remote", newRemote
+    #create dnode
+    d = Node.dnode
+      id: $rootScope.id
+      proxy: Node.proxy $rootScope
 
     #pipe dnode into the websockets stream
-    stream = shoe "/webs"
-
+    stream = Node.shoe "/webs"
     d.pipe(stream).pipe d
 
-    stream.on 'end', (msg) =>
-      d.removeListener "remote", newRemote
+    remoteUp = (remoteApi) ->
+      remote.proxy = remoteApi.proxy
+      log "connected"
+      $rootScope.$broadcast 'remote-up'
+
+    remoteDown = ->
+      d.removeListener "remote", remoteUp
+      $rootScope.$broadcast 'remote-down'
       d = null
       stream = null
-      log "connection lost, reconnecting in 5 seconds..."
+      log "disconnected, retrying in 5..."
       setTimeout connect, 5000
+
+    #remote api
+    d.on "remote", remoteUp
+    stream.on 'end', remoteDown
 
   #initial connection
   connect()

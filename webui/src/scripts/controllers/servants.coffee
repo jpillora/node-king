@@ -1,27 +1,33 @@
-App.controller 'ServantsController', ($scope, log) ->
+App.controller 'ServantsController', ($rootScope, $scope, log) ->
 
-  window.serv = $scope
+  $rootScope.servants = $scope
 
-  $scope.servants = []
+  $scope.list = []
 
-  get = (id) ->
+  $scope.add = (obj) ->
+    if _.isArray obj
+      _.each obj, $scope.add
+      return
     
+    $scope.list.push obj
+    $scope.$apply()
 
-  $scope.$on 'servant-process-stdout', (event, id, pid, output) ->
-    
+  $scope.remove = (obj) ->
+    if _.isArray obj
+      _.each obj, $scope.remove
+      return
 
-
-  $scope.$on 'servants-init', (event, servants) ->
-    $scope.servants = servants
-
-  $scope.$on 'servants-add', (event, servant) ->
-    $scope.servants.push servant
-
-  $scope.$on 'servants-remove', (event, servant) ->
-    result = _.find $scope.servants, (s) ->
-      servant.id is s.id
+    result = _.find $scope.list, (s) ->
+      s.id is obj.id
 
     return unless result
+    i = $scope.list.indexOf result
+    $scope.list.splice i,1
+    $scope.$apply()
 
-    i = $scope.servants.indexOf result
-    $scope.servants.splice i,1
+  $scope.reset = ->
+    $scope.list = []
+    $scope.$apply()
+
+  $rootScope.$on 'remote-down', $scope.reset
+

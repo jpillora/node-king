@@ -1,5 +1,6 @@
 Base = require "../common/base"
 helper = require "../common/helper"
+proxy = require "../common/proxy"
 upnode = require "upnode"
 
 # servant client
@@ -16,32 +17,28 @@ module.exports = class ServantClient extends Base
     @remote = null
 
     helper.bindAll @
-    
-    @api = @makeApi()
-
-    # helper.tap @d, 'emit', @log
 
     @d.on 'remote', @onRemote
     @d.on 'end',    @onEnd
 
   onRemote: (remote) ->
-    @id = remote.id
-    @log "connected"
     @remote = remote
+    @id = remote.id
 
     #add self
     @king.servants.add @
+    @log "connected"
+
+    @king.users.remoteProxyAll 'servants.add', @serialize()
 
   onEnd: ->
-    @log "dismissed..."
     @king.servants.remove @
+    @log "disconnected"
+
+    @king.users.remoteProxyAll 'servants.remove', @serialize()
 
   serialize: ->
     id: @id
     capabilities: @remote?.capabilities
-
-  makeApi: ->
-    broadcast: =>
-      @king.broadcast.apply @king, arguments
 
 

@@ -8,20 +8,18 @@
   App.controller('ProcessController', function($scope) {});
 
   App.controller('ServantController', function($scope, log, remote) {
-    var prog, version, _ref;
+    var data;
+    data = $scope.servantData;
     $scope.index = null;
     $scope.visible = false;
     $scope.cmd = 'pwd';
-    $scope.id = $scope.servantData.id;
-    $scope.capabilities = [];
-    _ref = $scope.servantData.capabilities;
-    for (prog in _ref) {
-      version = _ref[prog];
-      $scope.capabilities.push({
+    $scope.id = data.id;
+    $scope.capabilities = _.map(data.capabilities, function(version, prog) {
+      return {
         prog: prog,
         version: version
-      });
-    }
+      };
+    });
     $scope.processes = [];
     $scope.exec = function() {
       var proc;
@@ -29,14 +27,7 @@
       proc = {
         cmd: $scope.cmd
       };
-      remote.api.servant($scope.index, "remote.exec", proc.cmd, function(event) {
-        if (/^(std|err)/.test(event.type)) {
-          proc[event.type] = event.msg;
-        } else if (event.type === 'close') {
-          proc.code = event.code;
-        }
-        return $scope.$digest();
-      });
+      remote.proxy("king.servants." + $scope.id + ".remote.proxy.exec", $scope.cmd);
       return $scope.processes.push(proc);
     };
     return $scope.debug = function(s) {
@@ -44,29 +35,38 @@
     };
   });
 
-  App.controller('ServantsController', function($scope, log) {
-    var get;
-    window.serv = $scope;
-    $scope.servants = [];
-    get = function(id) {};
-    $scope.$on('servant-process-stdout', function(event, id, pid, output) {});
-    $scope.$on('servants-init', function(event, servants) {
-      return $scope.servants = servants;
-    });
-    $scope.$on('servants-add', function(event, servant) {
-      return $scope.servants.push(servant);
-    });
-    return $scope.$on('servants-remove', function(event, servant) {
+  App.controller('ServantsController', function($rootScope, $scope, log) {
+    $rootScope.servants = $scope;
+    $scope.list = [];
+    $scope.add = function(obj) {
+      if (_.isArray(obj)) {
+        _.each(obj, $scope.add);
+        return;
+      }
+      $scope.list.push(obj);
+      return $scope.$apply();
+    };
+    $scope.remove = function(obj) {
       var i, result;
-      result = _.find($scope.servants, function(s) {
-        return servant.id === s.id;
+      if (_.isArray(obj)) {
+        _.each(obj, $scope.remove);
+        return;
+      }
+      result = _.find($scope.list, function(s) {
+        return s.id === obj.id;
       });
       if (!result) {
         return;
       }
-      i = $scope.servants.indexOf(result);
-      return $scope.servants.splice(i, 1);
-    });
+      i = $scope.list.indexOf(result);
+      $scope.list.splice(i, 1);
+      return $scope.$apply();
+    };
+    $scope.reset = function() {
+      $scope.list = [];
+      return $scope.$apply();
+    };
+    return $rootScope.$on('remote-down', $scope.reset);
   });
 
   App.factory('guid', function() {
@@ -85,38 +85,31 @@
     return log;
   });
 
-  App.factory('remote', function($rootScope, log, guid) {
-    var connect, localApi, newRemote, remote;
-    localApi = {
-      id: guid(),
-      log: log,
-      broadcast: function() {
-        var args;
-        args = Array.prototype.slice.call(arguments);
-        log("broadcast: '" + args[0] + "'", args.slice(1));
-        $rootScope.$broadcast.apply($rootScope, arguments);
-        return $rootScope.$apply();
-      }
-    };
-    newRemote = function(remoteApi) {
-      remote.api = remoteApi;
-      log("got remote api", remote.api);
-      return $rootScope.$emit('remote-api');
-    };
+  App.factory('remote', function($rootScope, log) {
+    var connect, remote;
     connect = function() {
-      var d, stream,
-        _this = this;
-      d = dnode(localApi);
-      d.on("remote", newRemote);
-      stream = shoe("/webs");
+      var d, remoteDown, remoteUp, stream;
+      d = Node.dnode({
+        id: $rootScope.id,
+        proxy: Node.proxy($rootScope)
+      });
+      stream = Node.shoe("/webs");
       d.pipe(stream).pipe(d);
-      return stream.on('end', function(msg) {
-        d.removeListener("remote", newRemote);
+      remoteUp = function(remoteApi) {
+        remote.proxy = remoteApi.proxy;
+        log("connected");
+        return $rootScope.$broadcast('remote-up');
+      };
+      remoteDown = function() {
+        d.removeListener("remote", remoteUp);
+        $rootScope.$broadcast('remote-down');
         d = null;
         stream = null;
-        log("connection lost, reconnecting in 5 seconds...");
+        log("disconnected, retrying in 5...");
         return setTimeout(connect, 5000);
-      });
+      };
+      d.on("remote", remoteUp);
+      return stream.on('end', remoteDown);
     };
     connect();
     remote = {
@@ -129,8 +122,8 @@
 
   App.factory('store', function($rootScope, log, remote) {
     var getAll, store;
-    store = levelup('web-config', {
-      db: leveljs
+    store = Node.levelup('web-config', {
+      db: Node.leveljs
     });
     store.on('ready', function() {
       log('store ready');
@@ -145,7 +138,9 @@
     return store;
   });
 
-  App.run(function($rootScope, log, remote, store) {
+  App.run(function($rootScope, guid, log, remote, store) {
+    $rootScope.id = guid();
+    $rootScope.log = log;
     log("run webui");
     window.I = log;
     window.root = $rootScope;

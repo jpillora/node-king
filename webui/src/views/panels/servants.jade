@@ -4,7 +4,7 @@
   .title.sixteen.columns Servants
 
   .servant.eight.columns(ng-controller="ServantController",
-                         ng-repeat="servantData in servants")
+                         ng-repeat="servantData in list")
 
     div.clearfix(ng-init="index = $index")
       h5.id.pull-left {{ id }} - ({{ index }})

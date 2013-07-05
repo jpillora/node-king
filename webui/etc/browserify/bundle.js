@@ -1,4 +1,7 @@
-window.shoe = require('shoe');
-window.dnode = require('dnode');
-window.levelup = require('levelup');
-window.leveljs = require('level-js');
+window.Node = {
+  shoe: require('shoe'),
+  dnode: require('dnode'),
+  levelup: require('levelup'),
+  leveljs: require('level-js'),
+  proxy: require('../../../out/common/proxy')
+};

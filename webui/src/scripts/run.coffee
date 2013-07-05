@@ -1,6 +1,9 @@
 
 
-App.run ($rootScope, log, remote, store) ->
+App.run ($rootScope, guid, log, remote, store) ->
+
+  $rootScope.id = guid()
+  $rootScope.log = log
 
   log "run webui"
   window.I = log

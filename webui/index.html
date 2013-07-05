@@ -19,7 +19,7 @@
       </div>
       <div ng-controller="ServantsController" ng-show="panel == 'servants'" class="servants panel">
         <div class="title sixteen columns">Servants</div>
-        <div ng-controller="ServantController" ng-repeat="servantData in servants" class="servant eight columns">
+        <div ng-controller="ServantController" ng-repeat="servantData in list" class="servant eight columns">
           <div ng-init="index = $index" class="clearfix">
             <h5 class="id pull-left">{{ id }} - ({{ index }})</h5>
             <button ng-click="visible = !visible" ng-bind="visible &amp;&amp; 'Close' || 'Open'" class="id pull-right"></button>

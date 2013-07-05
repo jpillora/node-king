@@ -10,6 +10,7 @@ ecstatic = require "ecstatic"
 dbs = require "../common/dbs"
 Base = require "../common/base"
 helper = require "../common/helper"
+proxy = require "../common/proxy"
 dirs = require "../common/dirs"
 List = require "../common/list"
 ServantClient = require "./servant-client"
@@ -51,12 +52,6 @@ class KingServer extends Base
 
     ).install webs, "/webs"
 
-    @servants.on 'add', (item)    =>
-      @broadcast 'servants-add', item.serialize()
-
-    @servants.on 'remove', (item) =>
-      @broadcast 'servants-remove', item.serialize()
-
   stopComms: ->
     @comms.close() if @comms
     @status.put 'comms.running', false
@@ -69,17 +64,11 @@ class KingServer extends Base
       @comms = upnode((remote, d) =>
         #for each new connection
         servant = new ServantClient @, d
-
         #return interface
-        return servant.api
+        return {proxy:proxy servant}
       ).listen port, =>
         @log "comms listening on: #{port}"
         @status.put 'comms.running', true
-
-  broadcast: ->
-    args = arguments
-    @users.each (user) =>
-      user.remote.broadcast.apply null, args
 
   stopGit: ->
     @git.close() if @git
