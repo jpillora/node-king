@@ -1,5 +1,6 @@
 
 helper = require "./helper"
+os = require "os"
 
 # {EventEmitter} = require "events"
 
@@ -7,8 +8,11 @@ module.exports = class Base# extends EventEmitter
 
   name: 'Base'
 
+  os: os
+
   constructor: ->
-    @log 'init base' 
+    @log 'init base'
+
 
   toString: ->
     if @id then "#{@name} (#{@id})" else @name

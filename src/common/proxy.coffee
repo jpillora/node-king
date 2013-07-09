@@ -28,8 +28,9 @@ module.exports = (object) ->  ->
       break
   
   if typeof obj is 'function'
-    obj.apply(pobj, args)
-    # callback(res) if res
+    res = obj.apply(pobj, args)
+    if obj.length is 0
+      callback(res)
   else if typeof obj isnt 'object'
     callback null, obj
   else
