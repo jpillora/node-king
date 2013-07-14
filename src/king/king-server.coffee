@@ -28,8 +28,6 @@ class KingServer extends Base
   constructor: (@webPort = 5480) ->
 
     helper.bindAll @
-    @servants = new List
-    @users = new List
 
     @log "init dbs..."
     Database.init initDb, @gotDB
@@ -53,30 +51,59 @@ class KingServer extends Base
       root: path.join dirs.root, 'webui'
       cache: 0
 
+    @users = new List
+
+    @users.on 'add', (webUser) =>
+      #on connection - send all servants
+      webUser.remote.proxy 'servants.add', @servants.serialize()
+
+    @users.on 'remove', (webUser) =>
+      #remove watcher from all servants
+      @servants.proxyAll 'watchers.remove', webUser.id
+
     webs = http.createServer(ecstatic opts).listen port, =>
       @log "webs listening on: #{port}"
       @db.config 'port.web', port
 
     sock = shoe((stream) =>
       #for each new connection
-      new WebUser @, stream
+      webUser = new WebUser @, stream
+
+      webUser.once 'connected', =>
+        @users.add webUser
+
+      webUser.once 'disconnected', =>
+        @users.remove webUser
 
     ).install webs, "/webs"
 
   stopComms: ->
     return unless @comms
+    @servants.destroy()
     @comms.close()
     @comms = null
     @db.status 'comms.running', false
 
   startComms: ->
     return if @comms
+
+    @servants = new List
+    @servants.on 'change', (action, servant) =>
+      @users.proxyAll "servants.#{action}", servant.serialize()
+
     @db.config 'comms.port', (err, port) =>
       return @log "no comms port set" if err
 
-      @comms = upnode((remote, d) =>
+      @comms = upnode((remote, dnode) =>
         #for each new connection
-        servant = new ServantClient @, d
+        servant = new ServantClient @, dnode
+
+        servant.once 'connected', =>
+          @servants.add servant
+
+        servant.once 'disconnected', =>
+          @servants.remove servant
+
         #return interface
         return {proxy:proxy servant}
       ).listen port, =>

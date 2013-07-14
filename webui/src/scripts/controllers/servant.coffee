@@ -1,18 +1,35 @@
-App.controller 'ServantController', ($scope, log, remote) ->
+App.controller 'ServantController', ($rootScope, $scope, log, remote) ->
 
+  userId = $rootScope.id
   data = $scope.servantData
 
   $scope.index = null
   $scope.visible = false
   $scope.cmd = 'pwd'
-  $scope.id = data.id
+  $scope.servantId = data.id
   $scope.capabilities = _.map data.capabilities, (version, prog) -> { prog, version }
   $scope.processes = []
+
+  servantPath = "king.servants.#{$scope.servantId}.remote.proxy"
+
+  proxy = ->
+    arguments[0] = servantPath + "." + arguments[0]
+    remote.proxy.apply null,  arguments
+
+  $scope.toggle = ->
+    action = if $scope.visible then 'remove' else 'add'
+    proxy "watchers.#{action}", userId, (res) =>
+      if res isnt true
+        return
+      $scope.visible = !$scope.visible
+      log 'visible!', $scope.visible
+      $scope.$apply()
 
   $scope.exec = ->
     log 'exec!'
     proc = { cmd: $scope.cmd }
-    remote.proxy "king.servants.#{$scope.id}.remote.proxy.exec", $scope.cmd
+    proxy "exec", $scope.cmd, (err, pid) ->
+      console.log 'executing', pid
 
 
     # $scope.index, "remote.exec", proc.cmd, (event) ->

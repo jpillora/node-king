@@ -3,6 +3,7 @@ App.factory 'remote', ($rootScope, log) ->
   #remote connect
   connect = ->
 
+    log "connecting..."
     #create dnode
     d = Node.dnode
       id: $rootScope.id
@@ -31,11 +32,8 @@ App.factory 'remote', ($rootScope, log) ->
     d.on "remote", remoteUp
     stream.on 'end', remoteDown
 
-  #initial connection
-  connect()
-
   remote = 
-    reconnect: connect
+    connect: connect
     ready: false
 
   return remote

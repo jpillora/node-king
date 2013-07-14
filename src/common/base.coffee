@@ -1,8 +1,9 @@
 
+{EventEmitter} = require "events"
 helper = require "./helper"
 prepend = (obj, args)-> ["#{obj.toString()}:"].concat Array::slice.call args
 
-module.exports = class Base
+module.exports = class Base extends EventEmitter
 
   name: 'Base'
 

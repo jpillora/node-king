@@ -15,7 +15,8 @@ class Database extends Base
   constructor: (init, callback) ->
 
     isNew = !fs.existsSync path
-    @lvl = levelup path
+    @lvl = levelup path,
+      valueEncoding: 'json'
 
     @log if isNew then 'created' else 'loaded'
 
@@ -40,7 +41,8 @@ class Database extends Base
   change: (fn) ->
     #.on(change-events...)
     ['put', 'del', 'batch'].forEach (event) =>
-      @lvl.on event, -> fn.call null, event, arguments
+      @lvl.on event, ->
+        fn.call null, event, arguments
     null
 
   namespace: (prefix) ->
@@ -56,7 +58,8 @@ class Database extends Base
     @queryAll {}, cb
     null
 
-  queryAll: (query, cb) ->
+  queryAll: (query = {}, cb) ->
+    query.valueEncoding = 'json'
     results = {}
     data = (obj) =>
       results[obj.key] = obj.value

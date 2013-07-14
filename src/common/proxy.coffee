@@ -1,14 +1,20 @@
 
+fallbackCallback = ->
+  console.log.apply console, ['proxy result:'].concat Array::slice.call arguments
+
 module.exports = (object) ->  ->
   args = Array::slice.call arguments
   
   callback = args[args.length-1]
-  callback = (-> console.log.apply console, arguments) if typeof callback isnt 'function'
+  if typeof callback isnt 'function'
+    callback = fallbackCallback
   path = args.shift()
 
   if typeof path isnt 'string'
-    callback "proxy path isnt a string (#{path})"
+    callback Object.keys obj
     return
+
+  # console.log 'PROXY', path, args.length, callback isnt fallbackCallback
   
   ps = path.split('.')
 
@@ -29,11 +35,14 @@ module.exports = (object) ->  ->
   
   if typeof obj is 'function'
     res = obj.apply(pobj, args)
-    if obj.length is 0
+    # if we've provided a callback that the fn 
+    # doesnt seem to accept it, assume sync.
+    if callback isnt fallbackCallback and
+       args.length is obj.length+1
       callback(res)
   else if typeof obj isnt 'object'
     callback null, obj
   else
     callback Object.keys obj
 
-  null
+  42

@@ -26,7 +26,7 @@ module.exports = class WebUser extends Base
 
     @d.pipe(@stream).pipe @d
 
-    #hack: stream emit not landing...
+    #hack: stream.on close not firing...
     helper.tap @stream, 'emit', (e) =>
       @onClose() if e is 'close'
 
@@ -37,13 +37,11 @@ module.exports = class WebUser extends Base
 
   onReady: ->
     @log "connected"
-    @king.users.add @
-
-    @remote.proxy 'servants.add', @king.servants.serialize()
+    @emit "connected"
   
   onClose: ->
     @log "disconnected"
-    @king.users.remove @
+    @emit "disconnected"
 
 
 

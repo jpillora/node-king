@@ -8,8 +8,7 @@
 
     div.clearfix(ng-init="index = $index")
       h5.id.pull-left {{ id }} - ({{ index }})
-      button.id.pull-right(ng-click="visible = !visible",
-                           ng-bind="visible && 'Close' || 'Open'")
+      button.id.pull-right(ng-click="toggle()", ng-bind="visible && 'Close' || 'Open'")
     .content(ng-show="visible")
 
       .exec

@@ -18,33 +18,41 @@ class ServantServer extends Base
 
     #instance variables
     @kingAddr = helper.host.parse kingHost
-    @guid = helper.guid()
+    @id = helper.guid()
 
     @watchers = new List
     @procs = new List
-    
-    @status = 'idle'
+    @status = 'down'
 
     #bind all methods
     helper.bindAll @
 
     #init db
-    Database.init {id:@guid}, @gotDb
+    Database.init { displayId: @id }, @gotDb
 
   gotDb: (err, @db) ->
     @err "db error: #{err}" if err
-    @db.get 'id', @gotId
 
     #pass db changes through to watchers via king
     @db.change (type, args) =>
-      args = Array::slice.call args
+      a = Array::slice.call args
+      a[0] = "servants.#{@id}.#{a[0]}"
       @watchers.each (id) =>
-        path = "king.users.#{id}.remote.proxy.store.lvl.#{type}"
-        @remote.proxy.apply @remote, [path].concat args
+        path = "king.users.#{id}.remote.proxy.store.#{type}"
+        @remote.proxy.apply @remote, [path].concat a
 
-  gotId: (err, id) ->
+    #running processes
+    @db.status 'procs.running', 0
+    @procs.on 'add', =>
+      @db.status 'procs.running', @procs.length
+    @procs.on 'remove', =>
+      @db.status 'procs.running', @procs.length
+
+    #get stored display id
+    @db.get 'displayId', @gotDisplayId
+
+  gotDisplayId: (err, @displayId) ->
     @err "id missing..." if err
-    @id = id
     #get capabilties
     capabilities.calculate @gotCapabilties
 
@@ -53,7 +61,7 @@ class ServantServer extends Base
     #create upnode client with api
     @comms = upnode
       id: @id
-      guid: @guid
+      displayId: @displayId
       capabilities: capabilities
       proxy: proxy @
 
@@ -68,7 +76,9 @@ class ServantServer extends Base
     @d.on 'reconnect', => @setStatus 'connecting'
 
   #event listeners
-  onRemote: (remote) ->
+  onRemote: (remote, dnode) ->
+    dnode.on 'error', @err
+
     @log "connected to server"
     @remote = remote
 
@@ -79,11 +89,14 @@ class ServantServer extends Base
     @log "status #{@status} -> #{s}" if s isnt @status
     @status = s
 
-  exec: (cmd) =>
+  exec: (cmd, cb) =>
     try
-      new ServantProcess @, cmd
+      id = ServantProcess.run @, cmd
+      cb null, id
     catch e
       @log "Process Exception: #{e}"
+      return false
+    true
 
 #called via cli
 exports.start = (kingHost) ->

@@ -21,25 +21,25 @@ module.exports = class ServantClient extends Base
     @d.on 'remote', @onRemote
     @d.on 'end',    @onEnd
 
-  onRemote: (remote) ->
+  onRemote: (remote, dnode) ->
+
+    dnode.on 'error', @err
     @remote = remote
     @id = remote.id
 
     #add self
-    @king.servants.add @
     @log "connected"
-
-    @king.users.proxyAll 'servants.add', @serialize()
+    @emit 'connected'
 
   onEnd: ->
-    @king.servants.remove @
     @log "disconnected"
-
-    @king.users.proxyAll 'servants.remove', @serialize()
+    @emit 'disconnected'
 
   serialize: ->
     id: @remote.id
-    guid: @remote.guid
+    displayId: @remote.displayId
     capabilities: @remote?.capabilities
 
+  destroy: ->
+    @d.end()
 

@@ -3,7 +3,7 @@
 Base = require "../common/base"
 helper = require "../common/helper"
 
-module.exports = class ServantProcess extends Base
+class ServantProcess extends Base
 
   name: "ServantProcess"
 
@@ -21,24 +21,32 @@ module.exports = class ServantProcess extends Base
       @node = false
       spawn program, args
 
+    @servant.procs.add @p
+
     @id = @p.pid#"#{@p.pid}-#{helper.guid()}"
 
-    @log "command", cmd
+    @store "execute", cmd
 
     @p.stdout.on 'data', (buff) =>
-      @log 'stdout', buff.toString()
+      @store 'stdout', buff.toString().replace(/\n$/,'')
 
     @p.stderr.on 'data', (buff) =>
-      @log 'stderr', buff.toString()
+      @store 'stderr', buff.toString()
 
     @p.on 'close', (code) =>
-      @log 'close', code
-      @servant.procs.remove @p
+      @store 'close', code
+      @end()
 
     @p.on 'error', (err) =>
-      @log 'error', err.toString()
-      @servant.procs.remove @p
+      @store 'error', err.toString()
+      @end()
 
-  log: (type, value) ->
-    @servant.db.put "process-#{@id}-log:#{Date.now()}", {type,value}
+  store: (type, value) ->
+    @servant.db.put "procs.#{@p.pid}.log:#{Date.now()}", {type,value}
 
+  end: ->
+    @servant.procs.remove @p
+
+exports.run = (servant, cmd) ->
+  sp = new ServantProcess servant, cmd
+  sp.id
