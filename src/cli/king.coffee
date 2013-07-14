@@ -1,19 +1,27 @@
 pkg = require("../../package.json")
 program = require("commander")
 
+# this cli is - purposefully - as small as possible
+# all settings should be configured over the king web ui
+
 #cli init
 program.version pkg.version
-program.usage "<rule [port]|serve host[:port]>"
+program.usage "rule [http-port] OR serve host[:dnode-port]"
+program.option "--king-dir [dir]", "The directory used to store the king database [~/.king/]", "~/.king/"
 program.on '--help', ->
   console.log """
   \  Examples:
        king rule
-       king rule 5464
+       king rule 5480
        king serve 10.0.1.2
        king serve 10.0.1.2:5464
   \  Notes:
-       default port is KING (5464)
+       king default http port is 5480
+       servant default dnode port is 5464 (KING)
+       king dnode port can be changed via the WebUI
   """
+
+
 program.parse process.argv
 
 action = program.args[0]
@@ -24,6 +32,11 @@ unless action in ["rule","serve"]
 
 type = if action is "rule" then "king" else "servant"
 
+#set king directory first!
+dirs = require "../common/dirs"
+dirs.setKingDir program.kingDir
+
+#load server type
 server = require "../#{type}/#{type}-server"
 
 #fire up a king

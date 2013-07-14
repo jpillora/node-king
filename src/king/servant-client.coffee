@@ -29,16 +29,17 @@ module.exports = class ServantClient extends Base
     @king.servants.add @
     @log "connected"
 
-    @king.users.remoteProxyAll 'servants.add', @serialize()
+    @king.users.proxyAll 'servants.add', @serialize()
 
   onEnd: ->
     @king.servants.remove @
     @log "disconnected"
 
-    @king.users.remoteProxyAll 'servants.remove', @serialize()
+    @king.users.proxyAll 'servants.remove', @serialize()
 
   serialize: ->
-    id: @id
+    id: @remote.id
+    guid: @remote.guid
     capabilities: @remote?.capabilities
 
 

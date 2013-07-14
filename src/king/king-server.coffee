@@ -7,7 +7,7 @@ upnode = require "upnode"
 shoe = require "shoe"
 ecstatic = require "ecstatic"
 #local
-dbs = require "../common/dbs"
+Database = require "../common/database"
 Base = require "../common/base"
 helper = require "../common/helper"
 proxy = require "../common/proxy"
@@ -15,6 +15,11 @@ dirs = require "../common/dirs"
 List = require "../common/list"
 ServantClient = require "./servant-client"
 WebUser = require "./web-user"
+
+#initialize config with:
+initDb =
+  'config.comms.port': 5464
+  'config.git.port': 5418
 
 class KingServer extends Base
 
@@ -27,15 +32,21 @@ class KingServer extends Base
     @users = new List
 
     @log "init dbs..."
-    dbs.init @gotDBs
+    Database.init initDb, @gotDB
 
-  gotDBs: (err, @config, @status) ->
+  gotDB: (err, @db) ->
     return "config error: #{err}" if err
 
     @startWeb(@webPort)
     @startStatsd()
     @startGit()
     @startComms()
+
+    #pass db changes through to users (and to servants?)
+    @db.change (type, args) =>
+      args = Array::slice.call args
+      args.unshift "store.lvl.#{type}"
+      @users.proxyAll.apply @users, args
 
   startWeb: (port) ->
     opts =
@@ -44,7 +55,7 @@ class KingServer extends Base
 
     webs = http.createServer(ecstatic opts).listen port, =>
       @log "webs listening on: #{port}"
-      @config.put 'port.web', port
+      @db.config 'port.web', port
 
     sock = shoe((stream) =>
       #for each new connection
@@ -53,12 +64,14 @@ class KingServer extends Base
     ).install webs, "/webs"
 
   stopComms: ->
-    @comms.close() if @comms
-    @status.put 'comms.running', false
+    return unless @comms
+    @comms.close()
+    @comms = null
+    @db.status 'comms.running', false
 
   startComms: ->
-    #kill old comms if exists
-    @config.get 'port.comms', (err, port) =>
+    return if @comms
+    @db.config 'comms.port', (err, port) =>
       return @log "no comms port set" if err
 
       @comms = upnode((remote, d) =>
@@ -68,15 +81,18 @@ class KingServer extends Base
         return {proxy:proxy servant}
       ).listen port, =>
         @log "comms listening on: #{port}"
-        @status.put 'comms.running', true
+        @db.status 'comms.running', true
 
   stopGit: ->
-    @git.close() if @git
-    @status.put 'git.running', false
+    return unless @git
+    @git.close()
+    @git = null
+    @db.status 'git.running', false
 
   startGit: ->
+    return if @git
     @stopGit()
-    @config.get 'port.git', (err, port) =>
+    @db.config 'git.port', (err, port) =>
       return @log "no git port set" if err
 
       @repos = pushover path.join dirs.king, 'repos'
@@ -85,7 +101,7 @@ class KingServer extends Base
         @repos.handle req, res
       ).listen port, =>
         @log "git listening on: #{port}"
-        @status.put 'git.running', true
+        @db.status 'git.running', true
 
       @repos.on 'push', (push) =>
         @log('GIT: push')

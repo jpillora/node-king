@@ -14,12 +14,14 @@ App.factory 'remote', ($rootScope, log) ->
 
     remoteUp = (remoteApi) ->
       remote.proxy = remoteApi.proxy
+      remote.ready = true
       log "connected"
       $rootScope.$broadcast 'remote-up'
 
     remoteDown = ->
       d.removeListener "remote", remoteUp
       $rootScope.$broadcast 'remote-down'
+      remote.ready = false
       d = null
       stream = null
       log "disconnected, retrying in 5..."
@@ -35,6 +37,5 @@ App.factory 'remote', ($rootScope, log) ->
   remote = 
     reconnect: connect
     ready: false
-    api: null
 
   return remote

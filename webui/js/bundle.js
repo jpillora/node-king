@@ -23,6 +23,7 @@ module.exports = function(object) {
       obj = obj[name];
       type = typeof obj;
       if (type === 'undefined') {
+        console.log(pobj);
         return callback("prop '" + name + "' is undefined");
       }
       if (ps.length && type === 'function') {

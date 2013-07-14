@@ -1,19 +1,37 @@
 App.factory 'store', ($rootScope, log, remote) ->
 
-  store = Node.levelup 'web-config', db: Node.leveljs
-
-  store.on 'ready', ->
+  store = {
+    lvl: Node.levelup 'king-db', db: Node.leveljs
+  }
+  
+  store.lvl.on 'ready', ->
     log 'store ready'
     $rootScope.$emit 'store-ready'
 
+  store.lvl.on 'put', (k,v) ->
+    log "put '#{k}'='#{v}'"
+
+  store.lvl.on 'del', (k,v) ->
+    log "del '#{k}'"
+
+  store.lvl.on 'batch', (b) ->
+    log "batch", b
+
   #init store
-  getAll = ->
-
-
-  if remote.ready
-    getAll()
-  else
-    $rootScope.$on 'remote-api', getAll
+  init = ->
+    log "get king config"
+    remote.proxy 'king.db.getAll', (err, results) ->
+      return log("init error: #{err}") if err
+      ops = _.map results, (value,key) -> { type: "put", key, value }
+      if ops.length > 0
+        store.lvl.batch ops
   
+  if remote.ready
+    init()
+  else
+    $rootScope.$on 'remote-up', ->
+      #wipe
+      init()
 
+  
   return store

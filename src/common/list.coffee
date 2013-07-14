@@ -33,7 +33,7 @@ module.exports = class List extends EventEmitter
   serialize: ->
     @map (item) -> item?.serialize()
 
-  remoteProxyAll: ->
+  proxyAll: ->
     args = arguments
     @each (item) =>
       if item.remote?.proxy

@@ -3,6 +3,7 @@
 upnode = require "upnode"
 #local
 Base = require "../common/base"
+Database = require "../common/database"
 List = require "../common/list"
 helper = require "../common/helper"
 proxy = require "../common/proxy"
@@ -17,22 +18,43 @@ class ServantServer extends Base
 
     #instance variables
     @kingAddr = helper.host.parse kingHost
-    @id = helper.guid()
+    @guid = helper.guid()
+
+    @watchers = new List
     @procs = new List
+    
     @status = 'idle'
 
     #bind all methods
     helper.bindAll @
 
+    #init db
+    Database.init {id:@guid}, @gotDb
+
+  gotDb: (err, @db) ->
+    @err "db error: #{err}" if err
+    @db.get 'id', @gotId
+
+    #pass db changes through to watchers via king
+    @db.change (type, args) =>
+      args = Array::slice.call args
+      @watchers.each (id) =>
+        path = "king.users.#{id}.remote.proxy.store.lvl.#{type}"
+        @remote.proxy.apply @remote, [path].concat args
+
+  gotId: (err, id) ->
+    @err "id missing..." if err
+    @id = id
     #get capabilties
     capabilities.calculate @gotCapabilties
 
-  gotCapabilties: (@capabilities) ->
+  gotCapabilties: (capabilities) ->
 
     #create upnode client with api
     @comms = upnode
       id: @id
-      capabilities: @capabilities
+      guid: @guid
+      capabilities: capabilities
       proxy: proxy @
 
     #connect to king comms

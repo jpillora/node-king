@@ -2,7 +2,7 @@
 async = require "async"
 {exec} = require "child_process"
 
-version = /\d+\.\d+\.\d+/
+semvar = /\d+\.\d+\.\d+/
 #
 versionCmds = [
   {name: "node"}
@@ -24,8 +24,8 @@ exports.calculate = (callback) ->
     cmdString = "#{cmd.name} #{cmd.args}"
 
     exec cmdString, (err, stdout, stderr) ->
-      caps[cmd.name] = if m = stdout?.match version or 
-                          m = stderr?.match version
+      caps[cmd.name] = if m = stdout?.match semvar or 
+                          m = stderr?.match semvar
         m[0]
       else
         null

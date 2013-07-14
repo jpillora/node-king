@@ -15,13 +15,15 @@ module.exports = class ServantProcess extends Base
     program = args.shift()
 
     @p = if program is 'node'
+      @node = true
       fork args
     else
+      @node = false
       spawn program, args
 
-    @id = "#{@p.pid}-#{helper.guid()}"
+    @id = @p.pid#"#{@p.pid}-#{helper.guid()}"
 
-    @log "executing: #{cmd}!"
+    @log "command", cmd
 
     @p.stdout.on 'data', (buff) =>
       @log 'stdout', buff.toString()
@@ -37,7 +39,6 @@ module.exports = class ServantProcess extends Base
       @log 'error', err.toString()
       @servant.procs.remove @p
 
-  log: ->
-    args = Array::slice.call arguments
-    @servant.remote.proxy 'king.users.remoteProxyAll.log', args
+  log: (type, value) ->
+    @servant.db.put "process-#{@id}-log:#{Date.now()}", {type,value}
 

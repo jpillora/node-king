@@ -97,12 +97,14 @@
       d.pipe(stream).pipe(d);
       remoteUp = function(remoteApi) {
         remote.proxy = remoteApi.proxy;
+        remote.ready = true;
         log("connected");
         return $rootScope.$broadcast('remote-up');
       };
       remoteDown = function() {
         d.removeListener("remote", remoteUp);
         $rootScope.$broadcast('remote-down');
+        remote.ready = false;
         d = null;
         stream = null;
         log("disconnected, retrying in 5...");
@@ -114,38 +116,68 @@
     connect();
     remote = {
       reconnect: connect,
-      ready: false,
-      api: null
+      ready: false
     };
     return remote;
   });
 
   App.factory('store', function($rootScope, log, remote) {
-    var getAll, store;
-    store = Node.levelup('web-config', {
-      db: Node.leveljs
-    });
-    store.on('ready', function() {
+    var init, store;
+    store = {
+      lvl: Node.levelup('king-db', {
+        db: Node.leveljs
+      })
+    };
+    store.lvl.on('ready', function() {
       log('store ready');
       return $rootScope.$emit('store-ready');
     });
-    getAll = function() {};
+    store.lvl.on('put', function(k, v) {
+      return log("put '" + k + "'='" + v + "'");
+    });
+    store.lvl.on('del', function(k, v) {
+      return log("del '" + k + "'");
+    });
+    store.lvl.on('batch', function(b) {
+      return log("batch", b);
+    });
+    init = function() {
+      log("get king config");
+      return remote.proxy('king.db.getAll', function(err, results) {
+        var ops;
+        if (err) {
+          return log("init error: " + err);
+        }
+        ops = _.map(results, function(value, key) {
+          return {
+            type: "put",
+            key: key,
+            value: value
+          };
+        });
+        if (ops.length > 0) {
+          return store.lvl.batch(ops);
+        }
+      });
+    };
     if (remote.ready) {
-      getAll();
+      init();
     } else {
-      $rootScope.$on('remote-api', getAll);
+      $rootScope.$on('remote-up', function() {
+        return init();
+      });
     }
     return store;
   });
 
   App.run(function($rootScope, guid, log, remote, store) {
-    $rootScope.id = guid();
-    $rootScope.log = log;
     log("run webui");
     window.I = log;
     window.root = $rootScope;
-    window.store = store;
-    window.remote = remote;
+    $rootScope.id = guid();
+    $rootScope.log = log;
+    $rootScope.store = store;
+    $rootScope.remote = remote;
     return $rootScope.panel = "servants";
   });
 

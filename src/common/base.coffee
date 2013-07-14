@@ -1,31 +1,18 @@
 
 helper = require "./helper"
-os = require "os"
+prepend = (obj, args)-> ["#{obj.toString()}:"].concat Array::slice.call args
 
-# {EventEmitter} = require "events"
-
-module.exports = class Base# extends EventEmitter
+module.exports = class Base
 
   name: 'Base'
-
-  os: os
-
-  constructor: ->
-    @log 'init base'
-
 
   toString: ->
     if @id then "#{@name} (#{@id})" else @name
 
-  consargs: (a) ->
-    args = Array::slice.call a
-    args.unshift @toString() + ':'
-    args
-
   log: ->
-    console.log.apply   console, @consargs arguments
+    console.log.apply console, prepend @, arguments
     null
   
-  error: ->
-    console.error.apply console, @consargs arguments
-    null
+  err: ->
+    console.error.apply console, prepend @, arguments
+    throw "error, see log"
