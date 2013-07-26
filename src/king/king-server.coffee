@@ -35,10 +35,13 @@ class KingServer extends Base
   gotDB: (err, @db) ->
     return "config error: #{err}" if err
 
-    @startWeb(@webPort)
-    @startStatsd()
-    @startGit()
-    @startComms()
+    @initWeb()
+    @initGit()
+    @initComms()
+
+    @startServer(@webPort)
+
+    # @startStatsd()
 
     #pass db changes through to users (and to servants?)
     @db.change (type, args) =>
@@ -46,7 +49,26 @@ class KingServer extends Base
       args.unshift "store.lvl.#{type}"
       @users.proxyAll.apply @users, args
 
-  startWeb: (port) ->
+  startServer: (port) ->
+
+    @http = http.createServer((req, res) =>
+
+      console.log(">>", req.url, req.headers)
+
+      if /^git/i.test(req.headers?['user-agent'])
+        @repos.handle req, res
+      else if /^dnode/i.test(req.headers?['user-agent'])
+        console.log 'dnode', req, res
+      else
+        @staticFiles req, res
+
+    ).listen port, =>
+      @log "http listening on: #{port}"
+
+    #web sockets will steal the connection if it matches this url
+    @websockets.install @http, "/websockets"
+
+  initWeb: ->
     opts =
       root: path.join dirs.root, 'webui'
       cache: 0
@@ -61,11 +83,7 @@ class KingServer extends Base
       #remove watcher from all servants
       @servants.proxyAll 'watchers.remove', webUser.id
 
-    webs = http.createServer(ecstatic opts).listen port, =>
-      @log "webs listening on: #{port}"
-      @db.config 'port.web', port
-
-    sock = shoe((stream) =>
+    @websockets = shoe (stream) =>
       #for each new connection
       webUser = new WebUser @, stream
 
@@ -75,7 +93,9 @@ class KingServer extends Base
       webUser.once 'disconnected', =>
         @users.remove webUser
 
-    ).install webs, "/webs"
+    #static file handler
+    @staticFiles = ecstatic opts
+
 
   stopComms: ->
     return unless @comms
@@ -84,31 +104,24 @@ class KingServer extends Base
     @comms = null
     @db.status 'comms.running', false
 
-  startComms: ->
-    return if @comms
-
+  initComms: ->
     @servants = new List
     @servants.on 'change', (action, servant) =>
       @users.proxyAll "servants.#{action}", servant.serialize()
 
-    @db.config 'comms.port', (err, port) =>
-      return @log "no comms port set" if err
+    @comms = upnode((remote, dnode) =>
+      #for each new connection
+      servant = new ServantClient @, dnode
 
-      @comms = upnode((remote, dnode) =>
-        #for each new connection
-        servant = new ServantClient @, dnode
+      servant.once 'connected', =>
+        @servants.add servant
 
-        servant.once 'connected', =>
-          @servants.add servant
+      servant.once 'disconnected', =>
+        @servants.remove servant
 
-        servant.once 'disconnected', =>
-          @servants.remove servant
-
-        #return interface
-        return {proxy:proxy servant}
-      ).listen port, =>
-        @log "comms listening on: #{port}"
-        @db.status 'comms.running', true
+      #return interface
+      return {proxy:proxy servant}
+    )
 
   stopGit: ->
     return unless @git
@@ -116,31 +129,23 @@ class KingServer extends Base
     @git = null
     @db.status 'git.running', false
 
-  startGit: ->
+  initGit: ->
     return if @git
     @stopGit()
-    @db.config 'git.port', (err, port) =>
-      return @log "no git port set" if err
 
-      @repos = pushover path.join dirs.king, 'repos'
+    @repos = pushover path.join dirs.king, 'repos'
 
-      @git = http.createServer((req, res) =>
-        @repos.handle req, res
-      ).listen port, =>
-        @log "git listening on: #{port}"
-        @db.status 'git.running', true
+    @repos.on 'push', (push) =>
+      @log('GIT: push')
+      push.accept()
+  
+    @repos.on 'fetch', (fetch) =>
+      @log('GIT: fetch')
+      fetch.accept()
 
-      @repos.on 'push', (push) =>
-        @log('GIT: push')
-        push.accept()
-    
-      @repos.on 'fetch', (fetch) =>
-        @log('GIT: fetch')
-        fetch.accept()
-
-      @repos.on 'tag', (tag) =>
-        @log('GIT: tag')
-        tag.accept()
+    @repos.on 'tag', (tag) =>
+      @log('GIT: tag')
+      tag.accept()
 
     # @repos.list (err, rs) =>
     #   @log "GIT: list: ", rs

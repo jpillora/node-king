@@ -10,7 +10,7 @@ App.factory 'remote', ($rootScope, log) ->
       proxy: Node.proxy $rootScope
 
     #pipe dnode into the websockets stream
-    stream = Node.shoe "/webs"
+    stream = Node.shoe "/websockets"
     d.pipe(stream).pipe d
 
     remoteUp = (remoteApi) ->

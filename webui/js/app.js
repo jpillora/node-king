@@ -117,7 +117,7 @@
         id: $rootScope.id,
         proxy: Node.proxy($rootScope)
       });
-      stream = Node.shoe("/webs");
+      stream = Node.shoe("/websockets");
       d.pipe(stream).pipe(d);
       remoteUp = function(remoteApi) {
         remote.proxy = remoteApi.proxy;
