@@ -20,17 +20,14 @@ App.factory 'remote', ($rootScope, log) ->
       $rootScope.$broadcast 'remote-up'
 
     remoteDown = ->
-      d.removeListener "remote", remoteUp
       $rootScope.$broadcast 'remote-down'
       remote.ready = false
-      d = null
-      stream = null
       log "disconnected, retrying in 5..."
       setTimeout connect, 5000
 
     #remote api
-    d.on "remote", remoteUp
-    stream.on 'end', remoteDown
+    d.once "remote", remoteUp
+    stream.once 'end', remoteDown
 
   remote = 
     connect: connect
